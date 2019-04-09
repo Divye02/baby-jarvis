@@ -38,6 +38,7 @@ Divye Pratap Jain, Vardhman Mehta, Kevin Zhao
 - Brainstorm the general architecture of the translation model: perhaps taking influence from the model described in the following paper: https://arxiv.org/pdf/1706.03762.pdf
 - Implement the machine translation model with various RNN’s and transformers (with various hyperparameter changes) to determine how each neural architecture performs
 - Perhaps implement a user interface for people to test and interact with the best performing model (translation from English to another language)
+- Stretch goal: Implement a generic architecture that works with multiple languages (inspireed by [GPT](https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf))
 
 ## The github URL for your project
 https://github.com/Divye02/baby-jarvis

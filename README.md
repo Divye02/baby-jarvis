@@ -1,3 +1,3 @@
-# Welcome Baby Jarvis
+Baby Jarvis
 
-- [Blog 1](./blog1.html)
+https://divye02.github.io/baby-jarvis

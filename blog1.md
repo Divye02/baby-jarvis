@@ -2,7 +2,7 @@
 
 ## Your team name
 
-# Baby Jarvis
+Baby Jarvis
 
 ## A list of the team's members
 Divye Pratap Jain, Vardhman Mehta, Kevin Zhao

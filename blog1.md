@@ -26,18 +26,18 @@ Divye Pratap Jain, Vardhman Mehta, Kevin Zhao
   - Stretch Goal: Add Active learning for other related domains, as the model should be able to leverage existing domains to learn new tasks quickly.
 
 ### Action Plan 2: Conversation Oriented Dialogue System
-Implement  the network and implement a baseline version as discussed in (https://arxiv.org/pdf/1608.07076.pdf) 
-Project Scope
-Replace RNNs with transformers and evaluate performance changes 
-Stretch goal: Leverage BERT in combination with this paper to have a more robust and better dialogue system
-Evaluate our dialogue system (Ask our peers)
+- Implement  the network and implement a baseline version as discussed in (https://arxiv.org/pdf/1608.07076.pdf) 
+- Project Scope
+  - Replace RNNs with transformers and evaluate performance changes 
+  - Stretch goal: Leverage BERT in combination with this paper to have a more robust and better dialogue system
+  - Evaluate our dialogue system (Ask our peers)
 
 ### Action Plan 3:
-Determine a suitable language for the a machine translation model (from English)
-Data is available here for a number of English language pairs: https://www.statmt.org/wmt18/translation-task.html
-Brainstorm the general architecture of the translation model: perhaps taking influence from the model described in the following paper: https://arxiv.org/pdf/1706.03762.pdf
-Implement the machine translation model with various RNN’s and transformers (with various hyperparameter changes) to determine how each neural architecture performs
-Perhaps implement a user interface for people to test and interact with the best performing model (translation from English to another language)
+- Determine a suitable language for the a machine translation model (from English)
+- Data is available here for a number of English language pairs: https://www.statmt.org/wmt18/translation-task.html
+- Brainstorm the general architecture of the translation model: perhaps taking influence from the model described in the following paper: https://arxiv.org/pdf/1706.03762.pdf
+- Implement the machine translation model with various RNN’s and transformers (with various hyperparameter changes) to determine how each neural architecture performs
+- Perhaps implement a user interface for people to test and interact with the best performing model (translation from English to another language)
 
 ## The github URL for your project
 https://github.com/Divye02/baby-jarvis

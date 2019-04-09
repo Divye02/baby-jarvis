@@ -41,3 +41,9 @@ Divye Pratap Jain, Vardhman Mehta, Kevin Zhao
 
 ## The github URL for your project
 https://github.com/Divye02/baby-jarvis
+
+## Other relevant links
+- https://github.com/shawnwun/NNDIAL
+- https://github.com/edward-zhu/dialog/
+- https://github.com/MiuLab/TC-Bot
+- https://nlp.stanford.edu/blog/a-new-multi-turn-multi-domain-task-oriented-dialogue-dataset/

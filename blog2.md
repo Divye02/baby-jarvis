@@ -1,6 +1,6 @@
 ## Blog 2
 
-### An end-to-end trainable neural task oriented dialogue system that can perform tasks in multiple domains (https://arxiv.org/pdf/1604.04562.pdf)
+### An end-to-end trainable neural task oriented dialogue system that can perform tasks in multiple domains [paper](https://arxiv.org/pdf/1604.04562.pdf)
 
 #### Pro: 
 - Able to understand how context and memory can be used to make an assistant like product.
@@ -15,7 +15,7 @@
 - Difficult to evaluate each submodule of the overall model and their respective performances (how to train each one of them).
 - Requires a convoluted human evaluation scheme to evaluate the model performance.
 
-### A context aware neural dialogue system that can have long conversations (https://arxiv.org/pdf/1608.07076.pdf) (https://aclweb.org/anthology/W18-5020)
+### A context aware neural dialogue system that can have long conversations [paper1](https://arxiv.org/pdf/1608.07076.pdf) [paper2](https://aclweb.org/anthology/W18-5020)
 
 #### Pro:
 - Relatively easier to implement than our first idea.
@@ -27,7 +27,7 @@
 - Requires a convoluted human evaluation scheme to evaluate the model performance.
 - Difficult to come up with various metrics to judge the performance of the model.
 
-### Implement transformers in a machine translation task (https://arxiv.org/pdf/1706.03762.pdf) 
+### Implement transformers in a machine translation task [paper](https://arxiv.org/pdf/1706.03762.pdf) 
 
 #### Pro:
 - Data is readily available and performance evaluation is straightforward.

@@ -3,3 +3,4 @@ Project for [CSE481N Spring 2019](https://courses.cs.washington.edu/courses/cse4
 
 ### Blog Posts
 - [Blog Post 1](./blog1.html)
+- [Blog Post 2](./blog2.html)

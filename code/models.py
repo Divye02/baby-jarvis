@@ -294,7 +294,7 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
                 if not single_turn:
                     y_combine = tf.matmul(y_past_state, W_memory) + tf.matmul(y_presoftmax, W_current) #+ tf.matmul(sysreq, W_current_req) + tf.matmul(sysconf, W_current_conf)
                 else:
-                    y_combine = y_presoftmax
+                    y_combine = tf.matmul(y_presoftmax, W_current)
             y = tf.nn.softmax(y_combine) # + y_ss_update_contrib)
 
         else:

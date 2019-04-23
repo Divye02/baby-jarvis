@@ -565,7 +565,7 @@ def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False
     for idx in range(0, dialogue_count):
         
         current_dialogue = process_woz_dialogue(woz_json[idx]["dialogue"], language, override_en_ontology)
-        dialogues.append(current_dialogue[:1])
+        dialogues.append(current_dialogue)
 
         for turn_idx, turn in enumerate(current_dialogue):
 

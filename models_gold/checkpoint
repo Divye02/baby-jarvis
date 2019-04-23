@@ -1,0 +1,2 @@
+model_checkpoint_path: "CNN_en_False_woz_price range_woz_stat_update_1.0.ckpt"
+all_model_checkpoint_paths: "CNN_en_False_woz_price range_woz_stat_update_1.0.ckpt"

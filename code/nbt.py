@@ -14,7 +14,7 @@ import string
 import ConfigParser
 import types
 import codecs 
-
+from tensorflow.python import debug as tf_debug
 
 from random import shuffle
 from numpy.linalg import norm
@@ -582,6 +582,7 @@ def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False
             #print "$$$$", current_utterance
 
             training_turns.append(current_utterance)
+            break
 
     # print "Number of utterances in", file_path, "is:", len(training_turns)
 
@@ -1334,6 +1335,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     init = tf.global_variables_initializer()
     sess = tf.Session()
+    # sess = tf_debug.TensorBoardDebugWrapperSession(sess, 'localhost:6064')
     sess.run(init)
 
     print_mode = False
@@ -1408,11 +1410,13 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
             if epoch < 100:
                 if int(epoch * 1.5) > max_epoch:
-                    max_epoch = int(epoch * 1.5) 
+                    pass
+                    # max_epoch = int(epoch * 1.5)
                     # print "Increasing max epoch to:", max_epoch
             else:
                 if int(epoch * 1.2) > max_epoch:
-                    max_epoch = int(epoch * 1.2) 
+                    pass
+                    # max_epoch = int(epoch * 1.2)
                     # print "Increasing max epoch to:", max_epoch
 
 

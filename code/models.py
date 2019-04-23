@@ -230,29 +230,29 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
         y_presoftmax = y_presoftmax + sysconf + sysreq
 
 
-    if use_delex_features: 
-        y_presoftmax = y_presoftmax + utterance_representations_delex
+    # if use_delex_features:
+    #     y_presoftmax = y_presoftmax + utterance_representations_delex
 
 
-    # value-specific decoder:
-    if value_specific_decoder and False:
-        
-        h_utterance_representation_for_full_softmax = define_CNN_model(utterance_representations_full, num_filters, vector_dimension, longest_utterance_length)
-
-        h_utterance_dropout = tf.nn.dropout(h_utterance_representation_for_full_softmax, keep_prob)
-        
-        ss_w_hidden_layer = tf.Variable(tf.random_normal([vector_dimension, hidden_units_1]))
-        ss_b_hidden_layer = tf.Variable(tf.zeros([hidden_units_1]))
-
-        ss_hidden_layer_1 = tf.nn.relu(tf.matmul(h_utterance_dropout, ss_w_hidden_layer) + ss_b_hidden_layer)
-        ss_hidden_layer_1_with_dropout = tf.nn.dropout(ss_hidden_layer_1, keep_prob)
-
-        ss_w_softmax = tf.Variable(tf.random_normal([hidden_units_1, label_size]))
-        ss_b_softmax = tf.Variable(tf.zeros([label_size]))
-
-        ss_contribution = tf.matmul(ss_hidden_layer_1_with_dropout, ss_w_softmax) + ss_b_softmax
-
-        y_presoftmax += ss_contribution
+    # value-specific decoder: tf?
+    # if value_specific_decoder and False:
+    #
+    #     h_utterance_representation_for_full_softmax = define_CNN_model(utterance_representations_full, num_filters, vector_dimension, longest_utterance_length)
+    #
+    #     h_utterance_dropout = tf.nn.dropout(h_utterance_representation_for_full_softmax, keep_prob)
+    #
+    #     ss_w_hidden_layer = tf.Variable(tf.random_normal([vector_dimension, hidden_units_1]))
+    #     ss_b_hidden_layer = tf.Variable(tf.zeros([hidden_units_1]))
+    #
+    #     ss_hidden_layer_1 = tf.nn.relu(tf.matmul(h_utterance_dropout, ss_w_hidden_layer) + ss_b_hidden_layer)
+    #     ss_hidden_layer_1_with_dropout = tf.nn.dropout(ss_hidden_layer_1, keep_prob)
+    #
+    #     ss_w_softmax = tf.Variable(tf.random_normal([hidden_units_1, label_size]))
+    #     ss_b_softmax = tf.Variable(tf.zeros([label_size]))
+    #
+    #     ss_contribution = tf.matmul(ss_hidden_layer_1_with_dropout, ss_w_softmax) + ss_b_softmax
+    #
+    #     y_presoftmax += ss_contribution
 
     # as we are returning always, can't be null
     update_coefficient = tf.constant(0.49)
@@ -291,8 +291,8 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
 
                 W_current = diag_current + non_diag_current
 
-                y_combine = tf.matmul(y_past_state, W_memory) + tf.matmul(y_presoftmax, W_current) #+ tf.matmul(sysreq, W_current_req) + tf.matmul(sysconf, W_current_conf)
-
+                # y_combine = tf.matmul(y_past_state, W_memory) + tf.matmul(y_presoftmax, W_current) #+ tf.matmul(sysreq, W_current_req) + tf.matmul(sysconf, W_current_conf)
+                y_combine = y_presoftmax
             y = tf.nn.softmax(y_combine) # + y_ss_update_contrib)
 
         else:

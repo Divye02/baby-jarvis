@@ -36,7 +36,7 @@ def define_CNN_model(utterance_representations_full, num_filters=300, vector_dim
     return hidden_representation
 
 
-def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True):
+def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, single_turn=False):
     """
     This method defines the model and returns the required TensorFlow operations.
 
@@ -291,8 +291,10 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
 
                 W_current = diag_current + non_diag_current
 
-                # y_combine = tf.matmul(y_past_state, W_memory) + tf.matmul(y_presoftmax, W_current) #+ tf.matmul(sysreq, W_current_req) + tf.matmul(sysconf, W_current_conf)
-                y_combine = y_presoftmax
+                if not single_turn:
+                    y_combine = tf.matmul(y_past_state, W_memory) + tf.matmul(y_presoftmax, W_current) #+ tf.matmul(sysreq, W_current_req) + tf.matmul(sysconf, W_current_conf)
+                else:
+                    y_combine = y_presoftmax
             y = tf.nn.softmax(y_combine) # + y_ss_update_contrib)
 
         else:

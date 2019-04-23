@@ -530,6 +530,18 @@ def process_woz_dialogue(woz_dialogue,language,override_en_ontology):
     return dialogue_representation
 
 
+def make_single_turn_dataset(file_name, mode, language):
+    file_path = file_name + mode + "_" + language + ".json"
+    woz_json = json.load(codecs.open(file_path, "r", "utf-8"))
+
+    dialogue_count = len(woz_json)
+
+    for idx in range(0, dialogue_count):
+        woz_json[idx]["dialogue"] = woz_json[idx]["dialogue"][:1]
+
+    json.dump(woz_json, codecs.open(file_name + mode + "_single_turn_"+ language + ".json", 'w'))
+
+
 def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False):
     """
     This method loads WOZ dataset as a collection of utterances. 
@@ -582,7 +594,6 @@ def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False
             #print "$$$$", current_utterance
 
             training_turns.append(current_utterance)
-            break
 
     # print "Number of utterances in", file_path, "is:", len(training_turns)
 
@@ -1284,7 +1295,7 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
     return list_of_features
 
 
-def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name, dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096, batch_size=256):
+def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name, dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096, batch_size=256, single_turn=False):
     """
     This method trains a model on the data and saves the file parameters to a file which can 
     then be loaded to do evaluation. 
@@ -1299,11 +1310,11 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     slots = dialogue_ontology.keys()
 
-    _, utterances_train2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_train_" + language + ".json", language) # parameter determines which ones are loaded
+    _, utterances_train2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_train_" + ("single_turn_" if single_turn else "") + language + ".json", language) # parameter determines which ones are loaded
     
     utterance_count = len(utterances_train2)
 
-    _, utterances_val2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_validate_" + language + ".json", language)
+    _, utterances_val2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_validate_" + ("single_turn_" if single_turn else "") + language + ".json", language)
 
     val_count = len(utterances_val2)
 
@@ -1592,7 +1603,9 @@ class NeuralBeliefTracker:
             print "Couldn't read config file from", config_filepath, "... aborting."
             return None
 
+        self.single_turn = config.get("model", "single_turn") in ["True", "true"]
         dataset_name = config.get("model", "dataset_name")
+
 
         word_vectors = {}
         word_vector_destination = config.get("data", "word_vectors") 
@@ -1751,7 +1764,7 @@ class NeuralBeliefTracker:
                         value_vectors[value_idx, :] = word_vectors[value]
 
                 self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]), slot_vectors, value_vectors, \
-                     use_delex_features=self.use_delex_features, use_softmax=False, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update)
+                     use_delex_features=self.use_delex_features, use_softmax=False, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, single_turn=self.single_turn)
             else:
                 
                 slot_vectors = numpy.zeros((len(dialogue_ontology[slot])+1, 300), dtype="float32") # +1 for None
@@ -1762,7 +1775,7 @@ class NeuralBeliefTracker:
                         value_vectors[value_idx, :] = word_vectors[value]
 
                 self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]), slot_vectors, value_vectors, use_delex_features=self.use_delex_features, \
-                                                 use_softmax=True, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update)
+                                                 use_softmax=True, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, single_turn=self.single_turn)
         
         self.dialogue_ontology = dialogue_ontology
         
@@ -1832,7 +1845,7 @@ class NeuralBeliefTracker:
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
                     word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, batch_size=self.batch_size)
+                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, batch_size=self.batch_size, single_turn=self.single_turn)
             print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
 
 
@@ -1841,7 +1854,7 @@ class NeuralBeliefTracker:
         override_en_ontology = False
         percentage = 1.0
 
-        woz_dialogues, training_turns = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_test_" + self.language_suffix + ".json", self.language, override_en_ontology=False)
+        woz_dialogues, training_turns = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_test_" + ("single_turn_" if self.single_turn else "") + self.language_suffix + ".json", self.language, override_en_ontology=False)
         
         sessions = {}
         saver = tf.train.Saver()
@@ -1944,5 +1957,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()              
+    main()
 

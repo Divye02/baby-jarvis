@@ -18,7 +18,7 @@ from tensorflow.python import debug as tf_debug
 
 from random import shuffle
 from numpy.linalg import norm
-
+import tensorflow_hub as hub
 
 from models import model_definition
 
@@ -136,7 +136,6 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
 
     for slot in informable_slots:
         dialogue_slot_metrics[slot] = []
-
 
     for idx in range(0, dialogue_count):
 
@@ -306,7 +305,10 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         goal_joint_total = float(correct_turns) / float(correct_turns + incorrect_turns)
     
     slot_gj = {}
-    
+
+    # for ele in all_inc_d:
+    #     print(ele)
+
     total_true_positives = 0
     total_false_negatives = 0
     total_false_positives = 0
@@ -1007,13 +1009,13 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
             features_confirm_values, features_delex, y_labels, features_previous_state)
 
 
-def evaluate_model(dataset_name, sess, model_variables, data, target_slot, utterances, dialogue_ontology, \
+def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, target_slot, utterances, dialogue_ontology, \
                         positive_examples, negative_examples, print_mode=False, epoch_id=""):
 
 
     start_time = time.time()
 
-    keep_prob, x_full, x_delex, \
+    merged, keep_prob, x_full, x_delex, \
     requested_slots, system_act_confirm_slots, system_act_confirm_values, y_, y_past_state, accuracy, \
     f_score, precision, recall, num_true_positives, \
     num_positives, classified_positives, y, predictions, true_predictions, correct_prediction, \
@@ -1065,11 +1067,11 @@ def evaluate_model(dataset_name, sess, model_variables, data, target_slot, utter
 
     # ==============================================================================================
 
-        [current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run([predictions, y, accuracy, update_coefficient], 
+        [summary, current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run([merged, predictions, y, accuracy, update_coefficient],
                          feed_dict={x_full: xss_full, x_delex: xss_delex, \
                                     requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
                                     system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels, keep_prob: 1.0})
-
+        valid_writer.add_summary(summary, idx)
 #       below lines print predictions for small batches to see what is being predicted
 #        if idx == 0 or idx == batch_count - 2:
 #            #print current_y.shape, xss_labels.shape, xs_labels.shape
@@ -1301,7 +1303,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     then be loaded to do evaluation. 
     """
 
-    keep_prob, x_full, x_delex, \
+    merged, keep_prob, x_full, x_delex, \
     requested_slots, system_act_confirm_slots, system_act_confirm_values, \
     y_, y_past_state, accuracy, \
     f_score, precision, recall, num_true_positives, \
@@ -1346,6 +1348,8 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     init = tf.global_variables_initializer()
     sess = tf.Session()
+    train_writer = tf.summary.FileWriter('./logs/%s/train ' % target_slot, sess.graph)
+    valid_writer = tf.summary.FileWriter('./logs/%s/valid ' % target_slot, sess.graph)
     # sess = tf_debug.TensorBoardDebugWrapperSession(sess, 'localhost:6064')
     sess.run(init)
 
@@ -1365,7 +1369,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     
     epoch = 0
     last_update = -1
-
+    counter=0
     while epoch < max_epoch:
         
         sys.stdout.flush()
@@ -1388,14 +1392,17 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             (batch_xs_full, batch_sys_req, batch_sys_conf_slots, batch_sys_conf_values, 
                 batch_delex, batch_ys, batch_ys_prev) = batch_data
 
-            [_, cf, cp, cr, ca] = sess.run([train_step, f_score, precision, recall, accuracy], feed_dict={x_full: batch_xs_full, \
+            # merge = tf.summary.merge_all()
+
+            [summary, _, cf, cp, cr, ca] = sess.run([merged, train_step, f_score, precision, recall, accuracy], feed_dict={x_full: batch_xs_full, \
                                               x_delex: batch_delex, \
                                               requested_slots: batch_sys_req, \
                                               system_act_confirm_slots: batch_sys_conf_slots, \
                                               system_act_confirm_values: batch_sys_conf_values, \
                                               y_: batch_ys, y_past_state: batch_ys_prev, keep_prob: 0.5})
 
-
+            train_writer.add_summary(summary, counter)
+            counter += 1
         # ================================ VALIDATION ==============================================
 
         epoch_print_step = 1
@@ -1407,7 +1414,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                 print "Epoch", epoch-5, "to", epoch, "took", round(time.time() - start_time, 2), "seconds."
                 start_time = time.time()
 
-        current_f_score = evaluate_model(dataset_name, sess, model_variables, val_data, target_slot, utterances_val, \
+        current_f_score = evaluate_model(valid_writer, dataset_name, sess, model_variables, val_data, target_slot, utterances_val, \
         dialogue_ontology, positive_examples_validation, negative_examples_validation, print_mode=True, epoch_id=epoch+1)
 
         stime = time.time()
@@ -1854,7 +1861,7 @@ class NeuralBeliefTracker:
         override_en_ontology = False
         percentage = 1.0
 
-        woz_dialogues, training_turns = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_test_" + ("single_turn_" if self.single_turn else "") + self.language_suffix + ".json", self.language, override_en_ontology=False)
+        woz_dialogues, training_turns = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_validate_" + ("single_turn_" if self.single_turn else "") + self.language_suffix + ".json", self.language, override_en_ontology=False)
         
         sessions = {}
         saver = tf.train.Saver()

@@ -294,6 +294,8 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
                 if not single_turn:
                     y_combine = tf.matmul(y_past_state, W_memory) + tf.matmul(y_presoftmax, W_current) #+ tf.matmul(sysreq, W_current_req) + tf.matmul(sysconf, W_current_conf)
                 else:
+                    # ss_W_memory = tf.Variable(tf.random_normal([label_size, label_size]))
+                    # b_mem = tf.Variable(tf.random_normal([label_size]))
                     y_combine = tf.matmul(y_presoftmax, W_current)
             y = tf.nn.softmax(y_combine) # + y_ss_update_contrib)
 
@@ -354,11 +356,17 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
 
         accuracy = tf.reduce_mean(correct_prediction)
 
+    accuracy_summary = tf.summary.scalar("accuracy", accuracy)
+    f_score_summary = tf.summary.scalar("f_score", f_score)
+    precision_summary = tf.summary.scalar("precision", precision)
+    recall_summary = tf.summary.scalar("recall", recall)
+
+    merged = tf.summary.merge([accuracy_summary, f_score_summary, precision_summary, recall_summary])
 
     optimizer = tf.train.AdamOptimizer(0.001) 
     train_step = optimizer.minimize(cross_entropy)
 
-    return keep_prob, utterance_representations_full, utterance_representations_delex, \
+    return merged, keep_prob, utterance_representations_full, utterance_representations_delex, \
             system_act_slots, system_act_confirm_slots, system_act_confirm_values, \
             y_, y_past_state, accuracy, f_score, precision, \
            recall, num_true_positives, num_positives, classified_positives, y, \

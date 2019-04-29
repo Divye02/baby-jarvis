@@ -936,6 +936,11 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
     features_delex = []
     features_previous_state = []
 
+    utterances_full = []
+    utterances_requested_slots = []
+    utterances_confirm_slots = []
+    utterances_confirm_values = []
+
     # feature vector of the used slot:
     slot_fv = word_vectors[unicode(target_slot)]
 
@@ -969,9 +974,17 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
         delex_features = delexicalise_utterance_values(utterance[0][0], target_slot, dialogue_ontology[target_slot])
 
         features_full.append(utterance_fv[0])
+        utterances_full.append(utterance[0][0])
+
         features_requested_slots.append(utterance_fv[1])
+        utterances_requested_slots.append(utterance[1])
+
         features_confirm_slots.append(utterance_fv[2])
+        utterances_confirm_slots.append(utterance[2])
+
         features_confirm_values.append(utterance_fv[3])
+        utterances_confirm_values.append(utterance[3])
+
         features_delex.append(delex_features)
 
         prev_belief_state_vector = numpy.zeros((label_count,), dtype="float32")
@@ -988,9 +1001,17 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
         features_previous_state.append(prev_belief_state_vector)
 
     features_requested_slots = numpy.array(features_requested_slots)
+    utterances_requested_slots = numpy.array(utterances_requested_slots)
+
     features_confirm_slots = numpy.array(features_confirm_slots)
+    utterances_confirm_slots = numpy.array(utterances_confirm_slots)
+
     features_confirm_values = numpy.array(features_confirm_values)
-    features_full  = numpy.array(features_full)
+    utterances_confirm_values = numpy.array(utterances_confirm_values)
+
+    features_full = numpy.array(features_full)
+    utterances_full = numpy.array(utterances_full)
+
     features_delex = numpy.array(features_delex)
     features_previous_state = numpy.array(features_previous_state)
 
@@ -1006,7 +1027,8 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
         y_labels[positive_count:, label_count-1] = 1# NONE, 0-indexing
 
     return (features_full, features_requested_slots, features_confirm_slots, \
-            features_confirm_values, features_delex, y_labels, features_previous_state)
+            features_confirm_values, features_delex, y_labels, features_previous_state, utterances_full,
+            utterances_requested_slots, utterances_confirm_slots, utterances_confirm_values)
 
 
 def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, target_slot, utterances, dialogue_ontology, \
@@ -1300,15 +1322,16 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
 def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name, dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096, batch_size=256, single_turn=False):
     """
     This method trains a model on the data and saves the file parameters to a file which can 
-    then be loaded to do evaluation. 
+    then be loaded to do evaluation.
     """
 
     merged, keep_prob, x_full, x_delex, \
     requested_slots, system_act_confirm_slots, system_act_confirm_values, \
     y_, y_past_state, accuracy, \
     f_score, precision, recall, num_true_positives, \
-    num_positives, classified_positives, y, predictions, true_predictions,  \
-    correct_prediction, true_positives, train_step, update_coefficient = model_variables
+    num_positives, classified_positives, y, predictions, true_predictions, \
+    correct_prediction, true_positives, train_step, update_coefficient, \
+    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
 
     slots = dialogue_ontology.keys()
 
@@ -1390,16 +1413,21 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                 positive_examples, negative_examples, random_positive_count, random_negative_count)
 
             (batch_xs_full, batch_sys_req, batch_sys_conf_slots, batch_sys_conf_values, 
-                batch_delex, batch_ys, batch_ys_prev) = batch_data
+                batch_delex, batch_ys, batch_ys_prev, batch_u_full, batch_u_sys_req, batch_u_sys_conf_slots, batch_u_sys_conf_values) = batch_data
 
             # merge = tf.summary.merge_all()
 
-            [summary, _, cf, cp, cr, ca] = sess.run([merged, train_step, f_score, precision, recall, accuracy], feed_dict={x_full: batch_xs_full, \
-                                              x_delex: batch_delex, \
-                                              requested_slots: batch_sys_req, \
-                                              system_act_confirm_slots: batch_sys_conf_slots, \
-                                              system_act_confirm_values: batch_sys_conf_values, \
-                                              y_: batch_ys, y_past_state: batch_ys_prev, keep_prob: 0.5})
+            [summary, _, cf, cp, cr, ca] = sess.run([merged, train_step, f_score, precision, recall, accuracy],
+                                                    feed_dict={x_full: batch_xs_full, \
+                                                               x_delex: batch_delex, \
+                                                               requested_slots: batch_sys_req, \
+                                                               system_act_confirm_slots: batch_sys_conf_slots, \
+                                                               system_act_confirm_values: batch_sys_conf_values, \
+                                                               y_: batch_ys, y_past_state: batch_ys_prev,
+                                                               keep_prob: 0.5,
+                                                               u_full: batch_u_full, u_requested_slots: batch_u_sys_req,
+                                                               u_system_act_confirm_slots: batch_u_sys_conf_slots,
+                                                               u_system_act_confirm_values: batch_u_sys_conf_values})
 
             train_writer.add_summary(summary, counter)
             counter += 1

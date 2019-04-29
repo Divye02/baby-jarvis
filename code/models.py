@@ -118,8 +118,13 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     #candidates = tf.nn.sigmoid(tf.matmul(candidate_sum, w_candidates) + b_candidates)
     #candidates = tf.nn.sigmoid(tf.matmul(candidate_values, w_candidates) + b_candidates)
 
+    u_full = tf.placeholder(dtype=tf.string, shape=[None])
+    u_requested_slots = tf.placeholder(dtype=tf.string, shape=[None, None])
+    u_system_act_confirm_slots = tf.placeholder(dtype=tf.string, shape=[None, None])
+    u_system_act_confirm_values = tf.placeholder(dtype=tf.string, shape=[None, None])
+
     # filter needs to be of shape: filter_height = 1,2,3, filter_width=300, in_channel=1, out_channel=num_filters
-    # filter just dot products - in images these then overlap from different regions - we don't have that. 
+    # filter just dot products - in images these then overlap from different regions - we don't have that.
     h_utterance_representation = define_CNN_model(utterance_representations_full, num_filters, vector_dimension, longest_utterance_length)
 
     #candidate_sum = W_slots + W_values # size [label_size, vector_dimension]
@@ -370,4 +375,5 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
             system_act_slots, system_act_confirm_slots, system_act_confirm_values, \
             y_, y_past_state, accuracy, f_score, precision, \
            recall, num_true_positives, num_positives, classified_positives, y, \
-           predictions, true_predictions, correct_prediction, true_positives, train_step, update_coefficient
+           predictions, true_predictions, correct_prediction, true_positives, train_step, update_coefficient, \
+           u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values

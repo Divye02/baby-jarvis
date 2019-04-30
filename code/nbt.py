@@ -18,7 +18,6 @@ from tensorflow.python import debug as tf_debug
 
 from random import shuffle
 from numpy.linalg import norm
-import tensorflow_hub as hub
 
 from models import model_definition
 
@@ -1038,12 +1037,15 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
     start_time = time.time()
 
     merged, keep_prob, x_full, x_delex, \
-    requested_slots, system_act_confirm_slots, system_act_confirm_values, y_, y_past_state, accuracy, \
+    requested_slots, system_act_confirm_slots, system_act_confirm_values, \
+    y_, y_past_state, accuracy, \
     f_score, precision, recall, num_true_positives, \
-    num_positives, classified_positives, y, predictions, true_predictions, correct_prediction, \
-    true_positives, train_step, update_coefficient = model_variables
+    num_positives, classified_positives, y, predictions, true_predictions, \
+    correct_prediction, true_positives, train_step, update_coefficient, \
+    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
 
-    (xs_full, xs_sys_req, xs_conf_slots, xs_conf_values, xs_delex, xs_labels, xs_prev_labels) = data
+    (xs_full, xs_sys_req, xs_conf_slots, xs_conf_values, xs_delex, xs_labels, xs_prev_labels,
+     us_full, us_sys_req, us_sys_conf_slots, us_sys_conf_values) = data
 
     example_count = xs_full.shape[0]
 
@@ -1079,6 +1081,11 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
             xss_labels = numpy.zeros((batch_size, label_size), dtype="float32")
             xss_prev_labels = numpy.zeros((batch_size, label_size), dtype="float32")
 
+            uss_full = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_req = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_conf_slots = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_conf_values = numpy.zeros((batch_size, ), dtype=object)
+
         xss_full[0:curr_len, :, :] = xs_full[left_range:right_range, :, :]
         xss_sys_req[0:curr_len, :] = xs_sys_req[left_range:right_range, :]
         xss_conf_slots[0:curr_len, :] = xs_conf_slots[left_range:right_range, :]
@@ -1087,12 +1094,19 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
         xss_labels[0:curr_len, :] = xs_labels[left_range:right_range, :]
         xss_prev_labels[0:curr_len, :] = xs_prev_labels[left_range:right_range, :]
 
+        uss_full[0:curr_len, ] = us_full[left_range:right_range,]
+        uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range,]
+        uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range,]
+        uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range,]
     # ==============================================================================================
 
         [summary, current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run([merged, predictions, y, accuracy, update_coefficient],
                          feed_dict={x_full: xss_full, x_delex: xss_delex, \
                                     requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
-                                    system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels, keep_prob: 1.0})
+                                    system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels, keep_prob: 1.0,
+                                    u_full: uss_full, u_requested_slots: uss_sys_req,
+                                    u_system_act_confirm_slots: uss_sys_conf_slots,
+                                    u_system_act_confirm_values: uss_sys_conf_values})
         valid_writer.add_summary(summary, idx)
 #       below lines print predictions for small batches to see what is being predicted
 #        if idx == 0 or idx == batch_count - 2:

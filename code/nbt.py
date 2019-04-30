@@ -1104,7 +1104,7 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
                          feed_dict={x_full: xss_full, x_delex: xss_delex, \
                                     requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
                                     system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels, keep_prob: 1.0,
-                                    u_full: uss_full, u_requested_slots: uss_sys_req,
+                                    u_full: numpy.array([('hello '*40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
                                     u_system_act_confirm_slots: uss_sys_conf_slots,
                                     u_system_act_confirm_values: uss_sys_conf_values})
         valid_writer.add_summary(summary, idx)
@@ -1345,7 +1345,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     f_score, precision, recall, num_true_positives, \
     num_positives, classified_positives, y, predictions, true_predictions, \
     correct_prediction, true_positives, train_step, update_coefficient, \
-    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, embedding_tensor = model_variables
+    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
 
     slots = dialogue_ontology.keys()
 
@@ -1431,7 +1431,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
             # merge = tf.summary.merge_all()
 
-            [emb, summary, _, cf, cp, cr, ca] = sess.run([embedding_tensor, merged, train_step, f_score, precision, recall, accuracy],
+            [summary, _, cf, cp, cr, ca] = sess.run([merged, train_step, f_score, precision, recall, accuracy],
                                                     feed_dict={x_full: batch_xs_full, \
                                                                x_delex: batch_delex, \
                                                                requested_slots: batch_sys_req, \
@@ -1439,14 +1439,14 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                                                                system_act_confirm_values: batch_sys_conf_values, \
                                                                y_: batch_ys, y_past_state: batch_ys_prev,
                                                                keep_prob: 0.5,
-                                                               u_full: batch_u_full, u_requested_slots: batch_u_sys_req,
+                                                               u_full: numpy.array([('hello '*40)[:-1]] + list(batch_u_full)), u_requested_slots: batch_u_sys_req,
                                                                u_system_act_confirm_slots: batch_u_sys_conf_slots,
                                                                u_system_act_confirm_values: batch_u_sys_conf_values})
 
             train_writer.add_summary(summary, counter)
             counter += 1
 
-            print(emb.shape)
+            # print(emb.shape)
         # ================================ VALIDATION ==============================================
 
         epoch_print_step = 1

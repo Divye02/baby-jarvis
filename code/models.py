@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 
 
-def define_CNN_model(utterance_representations_full, num_filters=300, vector_dimension=300, longest_utterance_length=40):
+def define_CNN_model(utterance_representations_full, num_filters=300, vector_dimension=1324, longest_utterance_length=40):
     """
     Better code for defining the CNN model. 
     """
@@ -124,13 +124,24 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     u_system_act_confirm_slots = tf.placeholder(dtype=tf.string, shape=[None])
     u_system_act_confirm_values = tf.placeholder(dtype=tf.string, shape=[None])
 
-    embedding_tensor = elmo(u_full, as_dict=True)['default']
+    # temp = tf.placeholder(tf.float32, shape=[None, 40, 1024])
+    # embedding_tensor_full = tf.zeros_like(temp)
 
+    # embedding_tensor_requested_slots = tf.zeros([None, 10, 1024])
+    # embedding_tensor_system_act_confirm_slots = tf.zeros([None, 10, 1024])
+    # embedding_tensor_system_act_confirm_values = tf.zeros([None, 10, 1024])
+
+    embedding_tensor_full = elmo(u_full, as_dict=True)['elmo'][1:]
+    embedding_tensor_full = tf.concat([utterance_representations_full, embedding_tensor_full], axis=2)
+    # embedding_tensor_full[:, 0:tf.shape(temp)[2], :] = temp
+    # embedding_tensor_requested_slots = elmo(u_requested_slots, as_dict=True)['elmo']
+    # embedding_tensor_system_act_confirm_slots = elmo(u_system_act_confirm_slots, as_dict=True)['elmo']
+    # embedding_tensor_system_act_confirm_values = elmo(u_system_act_confirm_values, as_dict=True)['elmo']
 
     # filter needs to be of shape: filter_height = 1,2,3, filter_width=300, in_channel=1, out_channel=num_filters
     # filter just dot products - in images these then overlap from different regions - we don't have that.
-    h_utterance_representation = define_CNN_model(utterance_representations_full, num_filters, vector_dimension, longest_utterance_length)
-
+    h_utterance_representation = define_CNN_model(embedding_tensor_full, num_filters, 1324, longest_utterance_length)
+    # print(h_utterance_representation.shape)
     #candidate_sum = W_slots + W_values # size [label_size, vector_dimension]
 
     w_candidates = tf.Variable(tf.random_normal([vector_dimension, vector_dimension]))
@@ -380,4 +391,4 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
             y_, y_past_state, accuracy, f_score, precision, \
            recall, num_true_positives, num_positives, classified_positives, y, \
            predictions, true_predictions, correct_prediction, true_positives, train_step, update_coefficient, \
-           u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, embedding_tensor
+           u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values

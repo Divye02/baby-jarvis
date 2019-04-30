@@ -1681,6 +1681,7 @@ class NeuralBeliefTracker:
         self.batches_per_epoch = int(config.get("train", "batches_per_epoch"))
         self.max_epoch = int(config.get("train", "max_epoch"))
         self.batch_size = int(config.get("train", "batch_size"))
+        self.use_elmo = config.get("model", "use_elmo") in ["True", "true"]
 
 
         if not os.path.isfile(word_vector_destination): 
@@ -1815,7 +1816,7 @@ class NeuralBeliefTracker:
                         value_vectors[value_idx, :] = word_vectors[value]
 
                 self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]), slot_vectors, value_vectors, \
-                     use_delex_features=self.use_delex_features, use_softmax=False, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, single_turn=self.single_turn)
+                     use_delex_features=self.use_delex_features, use_softmax=False, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, use_elmo=self.use_elmo, single_turn=self.single_turn)
             else:
                 
                 slot_vectors = numpy.zeros((len(dialogue_ontology[slot])+1, 300), dtype="float32") # +1 for None
@@ -1826,7 +1827,7 @@ class NeuralBeliefTracker:
                         value_vectors[value_idx, :] = word_vectors[value]
 
                 self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]), slot_vectors, value_vectors, use_delex_features=self.use_delex_features, \
-                                                 use_softmax=True, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, single_turn=self.single_turn)
+                                                 use_softmax=True, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, use_elmo=self.use_elmo, single_turn=self.single_turn)
         
         self.dialogue_ontology = dialogue_ontology
         

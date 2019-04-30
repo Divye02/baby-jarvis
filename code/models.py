@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 
 
-def define_CNN_model(utterance_representations_full, num_filters=300, vector_dimension=1324, longest_utterance_length=40):
+def define_CNN_model(utterance_representations_full, num_filters=300, vector_dimension=300, longest_utterance_length=40):
     """
     Better code for defining the CNN model. 
     """
@@ -37,7 +37,7 @@ def define_CNN_model(utterance_representations_full, num_filters=300, vector_dim
     return hidden_representation
 
 
-def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, single_turn=False):
+def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, use_elmo=True, single_turn=False):
     """
     This method defines the model and returns the required TensorFlow operations.
 
@@ -118,21 +118,22 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     
     #candidates = tf.nn.sigmoid(tf.matmul(candidate_sum, w_candidates) + b_candidates)
     #candidates = tf.nn.sigmoid(tf.matmul(candidate_values, w_candidates) + b_candidates)
-    elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
+
     u_full = tf.placeholder(dtype=tf.string, shape=[None])
     u_requested_slots = tf.placeholder(dtype=tf.string, shape=[None])
     u_system_act_confirm_slots = tf.placeholder(dtype=tf.string, shape=[None])
     u_system_act_confirm_values = tf.placeholder(dtype=tf.string, shape=[None])
 
-    # temp = tf.placeholder(tf.float32, shape=[None, 40, 1024])
-    # embedding_tensor_full = tf.zeros_like(temp)
+    embedding_tensor_full = tf.placeholder(dtype=tf.float32, shape=[None, 40, vector_dimension + 1024])
+    if use_elmo:
+        elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
+        elmo_emb = elmo(u_full, as_dict=True)['elmo'][1:]
+        embedding_tensor_full = tf.concat([utterance_representations_full, elmo_emb], axis=2)
 
     # embedding_tensor_requested_slots = tf.zeros([None, 10, 1024])
     # embedding_tensor_system_act_confirm_slots = tf.zeros([None, 10, 1024])
     # embedding_tensor_system_act_confirm_values = tf.zeros([None, 10, 1024])
 
-    embedding_tensor_full = elmo(u_full, as_dict=True)['elmo'][1:]
-    embedding_tensor_full = tf.concat([utterance_representations_full, embedding_tensor_full], axis=2)
     # embedding_tensor_full[:, 0:tf.shape(temp)[2], :] = temp
     # embedding_tensor_requested_slots = elmo(u_requested_slots, as_dict=True)['elmo']
     # embedding_tensor_system_act_confirm_slots = elmo(u_system_act_confirm_slots, as_dict=True)['elmo']
@@ -140,7 +141,7 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
 
     # filter needs to be of shape: filter_height = 1,2,3, filter_width=300, in_channel=1, out_channel=num_filters
     # filter just dot products - in images these then overlap from different regions - we don't have that.
-    h_utterance_representation = define_CNN_model(embedding_tensor_full, num_filters, 1324, longest_utterance_length)
+    h_utterance_representation = define_CNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, num_filters, vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
     # print(h_utterance_representation.shape)
     #candidate_sum = W_slots + W_values # size [label_size, vector_dimension]
 

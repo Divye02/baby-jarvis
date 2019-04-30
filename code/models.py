@@ -1,5 +1,6 @@
 import numpy
 import tensorflow as tf
+import tensorflow_hub as hub
 
 
 def define_CNN_model(utterance_representations_full, num_filters=300, vector_dimension=300, longest_utterance_length=40):
@@ -117,11 +118,14 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     
     #candidates = tf.nn.sigmoid(tf.matmul(candidate_sum, w_candidates) + b_candidates)
     #candidates = tf.nn.sigmoid(tf.matmul(candidate_values, w_candidates) + b_candidates)
-
+    elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
     u_full = tf.placeholder(dtype=tf.string, shape=[None])
     u_requested_slots = tf.placeholder(dtype=tf.string, shape=[None])
     u_system_act_confirm_slots = tf.placeholder(dtype=tf.string, shape=[None])
     u_system_act_confirm_values = tf.placeholder(dtype=tf.string, shape=[None])
+
+    embedding_tensor = elmo(u_full, as_dict=True)['default']
+
 
     # filter needs to be of shape: filter_height = 1,2,3, filter_width=300, in_channel=1, out_channel=num_filters
     # filter just dot products - in images these then overlap from different regions - we don't have that.
@@ -376,4 +380,4 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
             y_, y_past_state, accuracy, f_score, precision, \
            recall, num_true_positives, num_positives, classified_positives, y, \
            predictions, true_predictions, correct_prediction, true_positives, train_step, update_coefficient, \
-           u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values
+           u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, embedding_tensor

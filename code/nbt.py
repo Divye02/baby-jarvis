@@ -1345,7 +1345,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     f_score, precision, recall, num_true_positives, \
     num_positives, classified_positives, y, predictions, true_predictions, \
     correct_prediction, true_positives, train_step, update_coefficient, \
-    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
+    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, embedding_tensor = model_variables
 
     slots = dialogue_ontology.keys()
 
@@ -1431,7 +1431,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
             # merge = tf.summary.merge_all()
 
-            [summary, _, cf, cp, cr, ca] = sess.run([merged, train_step, f_score, precision, recall, accuracy],
+            [emb, summary, _, cf, cp, cr, ca] = sess.run([embedding_tensor, merged, train_step, f_score, precision, recall, accuracy],
                                                     feed_dict={x_full: batch_xs_full, \
                                                                x_delex: batch_delex, \
                                                                requested_slots: batch_sys_req, \
@@ -1445,6 +1445,8 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
             train_writer.add_summary(summary, counter)
             counter += 1
+
+            print(emb.shape)
         # ================================ VALIDATION ==============================================
 
         epoch_print_step = 1

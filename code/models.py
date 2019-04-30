@@ -119,9 +119,9 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     #candidates = tf.nn.sigmoid(tf.matmul(candidate_values, w_candidates) + b_candidates)
 
     u_full = tf.placeholder(dtype=tf.string, shape=[None])
-    u_requested_slots = tf.placeholder(dtype=tf.string, shape=[None, None])
-    u_system_act_confirm_slots = tf.placeholder(dtype=tf.string, shape=[None, None])
-    u_system_act_confirm_values = tf.placeholder(dtype=tf.string, shape=[None, None])
+    u_requested_slots = tf.placeholder(dtype=tf.string, shape=[None])
+    u_system_act_confirm_slots = tf.placeholder(dtype=tf.string, shape=[None])
+    u_system_act_confirm_values = tf.placeholder(dtype=tf.string, shape=[None])
 
     # filter needs to be of shape: filter_height = 1,2,3, filter_width=300, in_channel=1, out_channel=num_filters
     # filter just dot products - in images these then overlap from different regions - we don't have that.

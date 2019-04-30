@@ -977,13 +977,13 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
         utterances_full.append(utterance[0][0])
 
         features_requested_slots.append(utterance_fv[1])
-        utterances_requested_slots.append(utterance[1])
+        utterances_requested_slots.append('<new_slot_val>'.join(utterance[1]))
 
         features_confirm_slots.append(utterance_fv[2])
-        utterances_confirm_slots.append(utterance[2])
+        utterances_confirm_slots.append('<new_conf_slot>'.join(utterance[2]))
 
         features_confirm_values.append(utterance_fv[3])
-        utterances_confirm_values.append(utterance[3])
+        utterances_confirm_values.append('<new_conf_val>'.join(utterance[3]))
 
         features_delex.append(delex_features)
 

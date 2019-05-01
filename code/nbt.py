@@ -1496,7 +1496,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                   " - saving these parameters. Epoch is:", epoch + 1, "/", max_epoch, "---------------- ===========  \n"
 
             best_f_score = current_metric
-            path_to_save = "./models/" + model_type + "_" + language + "_" +  str(override_en_ontology) + "_" + \
+            path_to_save = "./models_no_elmo/" + model_type + "_" + language + "_" +  str(override_en_ontology) + "_" + \
                    str(dataset_name) + "_" + str(target_slot)+ "_" + str(exp_name) + "_" + str(percentage) + ".ckpt"
 
             save_path = saver.save(sess, path_to_save)
@@ -1917,7 +1917,7 @@ class NeuralBeliefTracker:
         """
         FUTURE: Train the NBT model with new dataset.
         """
-        for slot in sorted(self.dialogue_ontology.keys())[1:]:
+        for slot in sorted(self.dialogue_ontology.keys()):
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \

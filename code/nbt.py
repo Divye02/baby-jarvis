@@ -1336,7 +1336,7 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
     return list_of_features
 
 
-def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name, dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096, batch_size=256, single_turn=False):
+def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name, dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096, model_name='models', batch_size=256, single_turn=False):
     """
     This method trains a model on the data and saves the file parameters to a file which can 
     then be loaded to do evaluation.
@@ -1388,8 +1388,8 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     init = tf.global_variables_initializer()
     sess = tf.Session()
-    train_writer = tf.summary.FileWriter('./logs/%s/train ' % target_slot, sess.graph)
-    valid_writer = tf.summary.FileWriter('./logs/%s/valid ' % target_slot, sess.graph)
+    train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)
+    valid_writer = tf.summary.FileWriter('./logs/{}/{}/valid '.format(model_name, target_slot) , sess.graph)
     # sess = tf_debug.TensorBoardDebugWrapperSession(sess, 'localhost:6064')
     sess.run(init)
 
@@ -1496,7 +1496,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                   " - saving these parameters. Epoch is:", epoch + 1, "/", max_epoch, "---------------- ===========  \n"
 
             best_f_score = current_metric
-            path_to_save = "./models_no_elmo/" + model_type + "_" + language + "_" +  str(override_en_ontology) + "_" + \
+            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" +  str(override_en_ontology) + "_" + \
                    str(dataset_name) + "_" + str(target_slot)+ "_" + str(exp_name) + "_" + str(percentage) + ".ckpt"
 
             save_path = saver.save(sess, path_to_save)
@@ -1714,17 +1714,17 @@ class NeuralBeliefTracker:
         self.max_epoch = int(config.get("train", "max_epoch"))
         self.batch_size = int(config.get("train", "batch_size"))
         self.use_elmo = config.get("model", "use_elmo") in ["True", "true"]
-
+        self.train_model = config.get("train", "train_model")
+        self.eval_model = config.get("test", "eval_model")
 
         if not os.path.isfile(word_vector_destination): 
             print "Vectors not there, downloading small Paragram and putting it there."
             os.system("mkdir -p word-vectors/")
-            os.system("mkdir -p models/")
             os.system("mkdir -p results/")
             os.system("wget -O word-vectors/prefix_paragram.txt https://www.dropbox.com/s/r35ih722bbjpn8b/prefix_paragram.txt?dl=0")
             word_vector_destination = "word-vectors/prefix_paragram.txt"
 
-
+        os.system("mkdir -p ./models/{}".format(self.train_model))
         word_vectors = load_word_vectors(word_vector_destination, primary_language=language)
 
         word_vectors["tag-slot"] = xavier_vector("tag-slot")
@@ -1899,7 +1899,7 @@ class NeuralBeliefTracker:
         for slot in self.dialogue_ontology:
 
             try:
-                path_to_load = "models/" + self.model_type + "_en_False_" + \
+                path_to_load = "./models/{}/".format(self.eval_model) + self.model_type + "_en_False_" + \
                     str(self.dataset_name) + "_" + str(slot)+ "_" + str(self.exp_name) + "_1.0.ckpt"
 
                 saver.restore(sess, path_to_load)
@@ -1929,7 +1929,7 @@ class NeuralBeliefTracker:
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
                     word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, batch_size=self.batch_size, single_turn=self.single_turn)
+                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_name=self.train_model, batch_size=self.batch_size, single_turn=self.single_turn)
             print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
 
 
@@ -1962,7 +1962,7 @@ class NeuralBeliefTracker:
 
             for load_slot in slots_to_load:
 
-                path_to_load = "./models_elmo_20/" + self.model_type + "_" + self.language_suffix + "_" + str(override_en_ontology) + "_" + \
+                path_to_load = "./models/{}/".format(self.eval_model) + self.model_type + "_" + self.language_suffix + "_" + str(override_en_ontology) + "_" + \
                                        self.dataset_name + "_" + str(load_slot)+ "_" + str(self.exp_name) + "_" + str(percentage) + ".ckpt"
 
                 print "----------- Loading Model", path_to_load, " ----------------"

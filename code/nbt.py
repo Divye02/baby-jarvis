@@ -1512,7 +1512,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     
 
 def print_slot_predictions(distribution, slot_values, target_slot, threshold=0.05):
-    """models_elmo
+    """
     Prints all the activated slot values for the provided predictions
     """
 
@@ -1607,12 +1607,12 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
 
         delex_vector = delexicalise_utterance_values(current_utterance, target_slot, dialogue_ontology[target_slot])
 
-	uss_full.append(utterances[idx_hyp][0][0])
+        uss_full.append(utterances[idx_hyp][0][0])
         uss_sys_req.append('<new_slot_val>'.join(utterances[idx_hyp][1]))
         uss_sys_conf_slots.append('<new_conf_slot>'.join(utterances[idx_hyp][2]))
         uss_sys_conf_values.append('<new_conf_val>'.join(utterances[idx_hyp][3]))
         
-	fv_full.append(full_utt)
+        fv_full.append(full_utt)
         delexicalised_features.append(delex_vector)
         fv_sys_req.append(sys_req)
         fv_conf_slot.append(conf_slot)

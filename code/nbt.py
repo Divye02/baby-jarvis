@@ -1502,7 +1502,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             save_path = saver.save(sess, path_to_save)
 
         if epoch > 100:
-            path_to_save = "./models_elmo/" + model_type + "_" + language + "_" + str(override_en_ontology) + "_" + \
+            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" + str(override_en_ontology) + "_" + \
                            str(dataset_name) + "_" + str(target_slot) + "_" + str(exp_name) + "_" + str(
                 percentage) + "_last_ep" + ".ckpt"
 
@@ -1512,7 +1512,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     
 
 def print_slot_predictions(distribution, slot_values, target_slot, threshold=0.05):
-    """
+    """models_elmo
     Prints all the activated slot values for the provided predictions
     """
 

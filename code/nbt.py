@@ -1031,7 +1031,7 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
 
 
 def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, target_slot, utterances, dialogue_ontology, \
-                        positive_examples, negative_examples, print_mode=False, epoch_id=""):
+                        positive_examples, negative_examples, print_mode=False, epoch_id=0):
 
 
     start_time = time.time()
@@ -1095,11 +1095,14 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
         xss_prev_labels[0:curr_len, :] = xs_prev_labels[left_range:right_range, :]
 
         uss_full[0:curr_len, ] = us_full[left_range:right_range,]
+        uss_full[curr_len:, ] = ''
         uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range,]
+        uss_sys_req[curr_len:, ] = ''
         uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range,]
+        uss_sys_conf_slots[curr_len:, ] = ''
         uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range,]
+        uss_sys_conf_values[curr_len:, ] = ''
     # ==============================================================================================
-
         [summary, current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run([merged, predictions, y, accuracy, update_coefficient],
                          feed_dict={x_full: xss_full, x_delex: xss_delex, \
                                     requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
@@ -1107,7 +1110,7 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
                                     u_full: numpy.array([('hello '*40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
                                     u_system_act_confirm_slots: uss_sys_conf_slots,
                                     u_system_act_confirm_values: uss_sys_conf_values})
-        valid_writer.add_summary(summary, idx)
+        valid_writer.add_summary(summary, example_count*(epoch_id - 1)+ idx)
 #       below lines print predictions for small batches to see what is being predicted
 #        if idx == 0 or idx == batch_count - 2:
 #            #print current_y.shape, xss_labels.shape, xs_labels.shape
@@ -1119,7 +1122,7 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
     eval_accuracy = round(total_accuracy / element_count, 3)
 
     if print_mode:
-        print "Epoch", epoch_id, "[Accuracy] = ", eval_accuracy, " ----- update coeff:", update_coefficient_load # , round(end_time - start_time, 1), "seconds. ---"
+        print "Epoch", epoch_id, " Example count: ", example_count, "[Accuracy] = ", eval_accuracy, " ----- update coeff:", update_coefficient_load # , round(end_time - start_time, 1), "seconds. ---"
 
     return eval_accuracy
 
@@ -1418,6 +1421,8 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         if epoch > 1 and target_slot == "request":
             return
 
+        total_accuracy = 0
+        element_count = 0
         for batch_id in range(batches_per_epoch):
             
             random_positive_count = ratio[target_slot]
@@ -1446,8 +1451,13 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             train_writer.add_summary(summary, counter)
             counter += 1
 
+            total_accuracy += ca
+            element_count += 1
+
+        train_accuracy = round(total_accuracy / element_count, 3)
             # print(emb.shape)
         # ================================ VALIDATION ==============================================
+        print "Epoch", epoch, " Train accuracy: ", train_accuracy
 
         epoch_print_step = 1
         if epoch % 5 == 0 or epoch == 1:
@@ -1459,7 +1469,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                 start_time = time.time()
 
         current_f_score = evaluate_model(valid_writer, dataset_name, sess, model_variables, val_data, target_slot, utterances_val, \
-        dialogue_ontology, positive_examples_validation, negative_examples_validation, print_mode=True, epoch_id=epoch+1)
+        dialogue_ontology, positive_examples_validation, negative_examples_validation, print_mode=True, epoch_id=epoch)
 
         stime = time.time()
         current_metric = current_f_score
@@ -1562,6 +1572,10 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
     fv_conf_val = []
     features_previous_state = []
 
+    uss_full = []
+    uss_sys_req = []
+    uss_sys_conf_slots = []
+    uss_sys_conf_values = [] 
 
     for idx_hyp, extracted_fv in enumerate(fv_tuples):
 
@@ -1586,7 +1600,12 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
 
         delex_vector = delexicalise_utterance_values(current_utterance, target_slot, dialogue_ontology[target_slot])
 
-        fv_full.append(full_utt)
+	uss_full.append(utterances[idx_hyp][0][0])
+        uss_sys_req.append('<new_slot_val>'.join(utterances[idx_hyp][1]))
+        uss_sys_conf_slots.append('<new_conf_slot>'.join(utterances[idx_hyp][2]))
+        uss_sys_conf_values.append('<new_conf_val>'.join(utterances[idx_hyp][3]))
+        
+	fv_full.append(full_utt)
         delexicalised_features.append(delex_vector)
         fv_sys_req.append(sys_req)
         fv_conf_slot.append(conf_slot)
@@ -1601,17 +1620,23 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
     fv_conf_val = numpy.array(fv_conf_val)
     fv_full = numpy.array(fv_full)
     features_previous_state = numpy.array(features_previous_state)
+    
+    uss_full = numpy.array(uss_full)
+    uss_sys_req = numpy.array(uss_sys_req)
+    uss_sys_conf_slots = numpy.array(uss_sys_conf_slots)
+    uss_sys_conf_values = numpy.array(uss_sys_conf_values)
 
-    keep_prob, x_full, x_delex, \
+    merged, keep_prob, x_full, x_delex, \
     requested_slots, system_act_confirm_slots, system_act_confirm_values, y_, y_past_state, accuracy, \
     f_score, precision, recall, num_true_positives, \
     num_positives, classified_positives, y, predictions, true_predictions, correct_prediction, \
-    true_positives, train_step, update_coefficient = model_variables
+    true_positives, train_step, update_coefficient, u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
 
     distribution, update_coefficient_load = sess.run([y, update_coefficient], feed_dict={x_full: fv_full, x_delex: delexicalised_features, \
                                       requested_slots: fv_sys_req, \
                                       system_act_confirm_slots: fv_conf_slot, y_past_state: features_previous_state, system_act_confirm_values: fv_conf_val, \
-                                      keep_prob: 1.0})
+                                      keep_prob: 1.0, u_full: numpy.array([('hello '*40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
+				      u_system_act_confirm_slots: uss_sys_conf_slots, u_system_act_confirm_values: uss_sys_conf_values})
 
 
     belief_state = distribution[:, 0]
@@ -1892,7 +1917,7 @@ class NeuralBeliefTracker:
         """
         FUTURE: Train the NBT model with new dataset.
         """
-        for slot in self.dialogue_ontology.keys():
+        for slot in sorted(self.dialogue_ontology.keys()):
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \

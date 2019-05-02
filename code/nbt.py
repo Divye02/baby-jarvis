@@ -1501,6 +1501,13 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
             save_path = saver.save(sess, path_to_save)
 
+        if epoch > 100:
+            path_to_save = "./models_elmo/" + model_type + "_" + language + "_" + str(override_en_ontology) + "_" + \
+                           str(dataset_name) + "_" + str(target_slot) + "_" + str(exp_name) + "_" + str(
+                percentage) + "_last_ep" + ".ckpt"
+
+            save_path = saver.save(sess, path_to_save)
+
     print "The best parameters achieved a validation metric of", round(best_f_score, 4)
     
 

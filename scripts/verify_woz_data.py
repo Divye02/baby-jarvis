@@ -103,10 +103,26 @@ print train_test_same
 
 pp = pprint.PrettyPrinter(indent=4)
 print "Training Data Slot Distribution"
-pp.pprint(training_set_belief_distribution)
+turns = sum(training_set_belief_distribution.values())
+
+training_set_belief_distribution_percent = {}
+for key, value in training_set_belief_distribution.iteritems():
+	training_set_belief_distribution_percent[key] = ("%s: %s%%" % (value, round((value * 1.0 / turns) * 100.0, 3)))
+pp.pprint(training_set_belief_distribution_percent)
 
 print "Validation Data Slot Distribution"
-pp.pprint(validation_set_belief_distribution)
+turns = sum(validation_set_belief_distribution.values())
+
+validation_set_belief_distribution_percent = {}
+for key, value in validation_set_belief_distribution.iteritems():
+	validation_set_belief_distribution_percent[key] = ("%s: %s%%" % (value, round((value * 1.0 / turns) * 100.0, 3)))
+pp.pprint(validation_set_belief_distribution_percent)
 
 print "Test Data Slot Distribution"
-pp.pprint(test_set_belief_distribution)
+turns = sum(test_set_belief_distribution.values())
+
+test_set_belief_distribution_percent = {}
+for key, value in test_set_belief_distribution.iteritems():
+	test_set_belief_distribution_percent[key] = ("%s: %s%%" % (value, round((value * 1.0 / turns) * 100.0, 3)))
+pp.pprint(test_set_belief_distribution_percent)
+

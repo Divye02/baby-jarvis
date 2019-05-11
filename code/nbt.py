@@ -378,8 +378,8 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         # print "\n\nGoal Joint: " + str(round(goal_joint_total, 3)) + "\n"
         slot_gj["joint"] = round(goal_joint_total, 3)
 
-    if "request" in slot_gj:
-        del slot_gj["request"]
+    # if "request" in slot_gj:
+    #     del slot_gj["request"]
 
     return slot_gj, all_inc_d
 
@@ -1423,8 +1423,8 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         current_epoch_fscore = 0.0
         current_epoch_acc = 0.0
 
-        if epoch > 1 and target_slot == "request":
-            return
+        # if epoch > 1 and target_slot == "request":
+        #     return
 
         total_accuracy = 0
         element_count = 0
@@ -1927,7 +1927,7 @@ class NeuralBeliefTracker:
         for slot in self.dialogue_ontology:
 
             try:
-                path_to_load = "../../baby-jarvis/models/{}/".format(self.eval_model) + self.model_type + "_en_False_" + \
+                path_to_load = "./models/{}/".format(self.eval_model) + self.model_type + "_en_False_" + \
                                str(self.dataset_name) + "_" + str(slot) + "_" + str(self.exp_name) + "_1.0.ckpt"
 
                 saver.restore(sess, path_to_load)
@@ -1966,57 +1966,57 @@ class NeuralBeliefTracker:
                                                                      1), "seconds. ==================="
 
 
-def test_woz(self):
-    override_en_ontology = False
-    percentage = 1.0
+    def test_woz(self):
+        override_en_ontology = False
+        percentage = 1.0
 
-    woz_dialogues, _ = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_validate_" + (
-        "single_turn_" if self.single_turn else "") + self.language_suffix + ".json", self.language,
-                                     override_en_ontology=False)
+        woz_dialogues, _ = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_validate_" + (
+            "single_turn_" if self.single_turn else "") + self.language_suffix + ".json", self.language,
+                                         override_en_ontology=False)
 
-    sessions = {}
-    saver = tf.train.Saver()
+        sessions = {}
+        saver = tf.train.Saver()
 
-    print "WOZ evaluation using language:", self.language, self.language_suffix
+        print "WOZ evaluation using language:", self.language, self.language_suffix
 
-    sessions = {}
-    saver = tf.train.Saver()
+        sessions = {}
+        saver = tf.train.Saver()
 
-    list_of_belief_states = []
+        list_of_belief_states = []
 
-    for model_id in range(0, self.num_models):
+        for model_id in range(0, self.num_models):
 
-        if self.language == "english" or self.language == "en" or override_en_ontology:
-            slots_to_load = ["food", "price range", "area", "request"]
-        elif self.language == "italian" or self.language == "it":
-            slots_to_load = ["cibo", "prezzo", "area", "request"]
-        elif self.language == "german" or self.language == "de":
-            slots_to_load = ["essen", "preisklasse", "gegend", "request"]
+            if self.language == "english" or self.language == "en" or override_en_ontology:
+                slots_to_load = ["food", "price range", "area", "request"]
+            elif self.language == "italian" or self.language == "it":
+                slots_to_load = ["cibo", "prezzo", "area", "request"]
+            elif self.language == "german" or self.language == "de":
+                slots_to_load = ["essen", "preisklasse", "gegend", "request"]
 
-        for load_slot in slots_to_load:
-            path_to_load = "../../baby-jarvis/models/{}/".format(
-                self.eval_model) + self.model_type + "_" + self.language_suffix + "_" + str(
-                override_en_ontology) + "_" + \
-                           self.dataset_name + "_" + str(load_slot) + "_" + str(self.exp_name) + "_" + str(
-                percentage) + ".ckpt"
+            for load_slot in slots_to_load:
+                path_to_load = "./models/{}/".format(
+                    self.eval_model) + self.model_type + "_" + self.language_suffix + "_" + str(
+                    override_en_ontology) + "_" + \
+                               self.dataset_name + "_" + str(load_slot) + "_" + str(self.exp_name) + "_" + str(
+                    percentage) + ".ckpt"
 
-            print "----------- Loading Model", path_to_load, " ----------------"
+                print "----------- Loading Model", path_to_load, " ----------------"
 
-            sessions[load_slot] = tf.Session()
-            saver.restore(sessions[load_slot], path_to_load)
+                sessions[load_slot] = tf.Session()
+                saver.restore(sessions[load_slot], path_to_load)
 
-        evaluated_dialogues, belief_states = track_woz_data(woz_dialogues, self.model_variables, self.word_vectors,
-                                                            self.dialogue_ontology, sessions)
-        list_of_belief_states.append(belief_states)  # only useful for interpolating.
+            evaluated_dialogues, belief_states = track_woz_data(woz_dialogues, self.model_variables, self.word_vectors,
+                                                                self.dialogue_ontology, sessions)
+            list_of_belief_states.append(belief_states)  # only useful for interpolating.
 
-    results, failure_cases = evaluate_woz(evaluated_dialogues, self.dialogue_ontology)
+        results, failure_cases = evaluate_woz(evaluated_dialogues, self.dialogue_ontology)
 
-    json.dump(failure_cases, open("../../baby-jarvis/results/failure_cases_{}.json".format(self.eval_model), "w"),
-              indent=4)
-    json.dump(evaluated_dialogues, open("../../baby-jarvis/results/woz_tracking_{}.json".format(self.eval_model), "w"),
-              indent=4)
+        json.dump(failure_cases, open("./results/failure_cases_{}.json".format(self.eval_model), "w"),
+                  indent=4)
+        json.dump(evaluated_dialogues, open("./results/woz_tracking_{}.json".format(self.eval_model), "w"),
+                  indent=4)
 
-    print json.dumps(results, indent=4)
+        print json.dumps(results, indent=4)
 
 
 def main():

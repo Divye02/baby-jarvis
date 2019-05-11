@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#!/usr/local/bin/python
+# !/usr/local/bin/python
 import os
 import sys
 from copy import deepcopy
@@ -13,7 +13,7 @@ import math
 import string
 import ConfigParser
 import types
-import codecs 
+import codecs
 from tensorflow.python import debug as tf_debug
 
 from random import shuffle
@@ -22,7 +22,6 @@ from numpy.linalg import norm
 from models import model_definition
 
 global_var_asr_count = 1
-
 
 lp = {}
 lp["english"] = u"en"
@@ -41,32 +40,30 @@ lp["dutch"] = u"nl"
 
 def xavier_vector(word, D=300):
     """
-    Returns a D-dimensional vector for the word. 
+    Returns a D-dimensional vector for the word.
 
-    We hash the word to always get the same vector for the given word. 
+    We hash the word to always get the same vector for the given word.
     """
 
     seed_value = hash_string(word)
     numpy.random.seed(seed_value)
 
-    neg_value = - math.sqrt(6)/math.sqrt(D)
-    pos_value = math.sqrt(6)/math.sqrt(D)
+    neg_value = - math.sqrt(6) / math.sqrt(D)
+    pos_value = math.sqrt(6) / math.sqrt(D)
 
     rsample = numpy.random.uniform(low=neg_value, high=pos_value, size=(D,))
     norm = numpy.linalg.norm(rsample)
-    rsample_normed = rsample/norm
+    rsample_normed = rsample / norm
 
     return rsample_normed
 
 
 def hash_string(s):
-
     return abs(hash(s)) % (10 ** 8)
 
 
 def compare_request_lists(list_a, list_b):
-
-    if len(list_a) != len(list_b): 
+    if len(list_a) != len(list_b):
         return False
 
     list_a.sort()
@@ -81,13 +78,15 @@ def compare_request_lists(list_a, list_b):
 
 def evaluate_woz(evaluated_dialogues, dialogue_ontology):
     """
-    Given a list of (transcription, correct labels, predicted labels), this measures joint goal (as in Matt's paper), 
+    Given a list of (transcription, correct labels, predicted labels), this measures joint goal (as in Matt's paper),
     and f-scores, as presented in Shawn's NIPS paper.
-    
-    Assumes request is always there in the ontology.      
+
+    Assumes request is always there in the ontology.
     """
-    print_mode=True
-    informable_slots = list(set(["food", "area", "price range", "prezzo", "cibo", "essen", "preisklasse", "gegend"]) & set(dialogue_ontology.keys()))
+    print_mode = True
+    informable_slots = list(
+        set(["food", "area", "price range", "prezzo", "cibo", "essen", "preisklasse", "gegend"]) & set(
+            dialogue_ontology.keys()))
     dialogue_count = len(evaluated_dialogues)
     if "request" in dialogue_ontology:
         req_slots = [str("req_" + x) for x in dialogue_ontology["request"]]
@@ -104,7 +103,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
     req_match = 0.0
     req_full_turn_count = 0.0
 
-    req_acc_total = 0.0 # number of turns which express requestables
+    req_acc_total = 0.0  # number of turns which express requestables
     req_acc_correct = 0.0
 
     for slot in dialogue_ontology:
@@ -117,13 +116,16 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         false_positives[value] = 0
         false_negatives[value] = 0
 
+    correct_turns = 0  # when there is at least one informable, do all of them match?
+    incorrect_turns = 0  # when there is at least one informable, if any are different.
 
-    correct_turns = 0 # when there is at least one informable, do all of them match?
-    incorrect_turns = 0 # when there is at least one informable, if any are different. 
-    
     slot_correct_turns = {}
     slot_incorrect_turns = {}
 
+    all_inc_d = {
+        "fp": [],
+        "fn": []
+    }
     for slot in informable_slots:
         slot_correct_turns[slot] = 0.0
         slot_incorrect_turns[slot] = 0.0
@@ -141,11 +143,11 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         dialogue = evaluated_dialogues[idx]["dialogue"]
         # print dialogue
 
-        curr_dialogue_goal_joint_total   = 0.0 # how many turns have informables
+        curr_dialogue_goal_joint_total = 0.0  # how many turns have informables
         curr_dialogue_goal_joint_correct = 0.0
 
-        curr_dialogue_goal_slot_total = {} # how many turns in current dialogue have specific informables
-        curr_dialogue_goal_slot_correct = {} # and how many of these are correct
+        curr_dialogue_goal_slot_total = {}  # how many turns in current dialogue have specific informables
+        curr_dialogue_goal_slot_correct = {}  # and how many of these are correct
 
         for slot in informable_slots:
             curr_dialogue_goal_slot_total[slot] = 0.0
@@ -153,7 +155,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
 
         creq_tp = 0.0
         creq_fn = 0.0
-        creq_fp = 0.0 
+        creq_fp = 0.0
         # to compute per-dialogue f-score for requestables
 
         for turn in dialogue:
@@ -198,7 +200,6 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
                         creq_fp += 1.0
                         # print "-- FP:", turn[0], "---", true_requestables, "----", predicted_requestables
 
-
             # print turn
             inf_present = {}
             inf_correct = {}
@@ -223,21 +224,23 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
                     informable_present = True
                     inf_present[slot] = True
 
-                if true_value == predicted_value: # either match or none, so not incorrect
+                if true_value == predicted_value:  # either match or none, so not incorrect
                     if true_value != "none":
                         true_positives[slot] += 1
                 else:
                     if true_value == "none":
                         false_positives[slot] += 1
+                        all_inc_d['fp'].append(turn)
                     elif predicted_value == "none":
                         false_negatives[slot] += 1
+                        all_inc_d['fn'].append(turn)
                     else:
                         # spoke to Shawn - he does this as false negatives for now - need to think about how we evaluate it properly.
                         false_negatives[slot] += 1
+                        all_inc_d['fn'].append(turn)
 
                     informable_correct = False
                     inf_correct[slot] = False
-
 
             if informable_present:
 
@@ -259,7 +262,6 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
                     else:
                         slot_incorrect_turns[slot] += 1.0
 
-
         # current dialogue requestables
 
         if creq_tp + creq_fp > 0.0:
@@ -277,18 +279,18 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
                 # no requestables expressed, special value
                 creq_fscore = -1.0
             else:
-                creq_fscore = 0.0 # none correct but some exist
+                creq_fscore = 0.0  # none correct but some exist
         else:
             creq_fscore = (2 * creq_precision * creq_recall) / (creq_precision + creq_recall)
 
         dialogue_req_metrics.append(creq_fscore)
 
-
         # and current dialogue informables:
 
         for slot in informable_slots:
             if curr_dialogue_goal_slot_total[slot] > 0:
-                dialogue_slot_metrics[slot].append(float(curr_dialogue_goal_slot_correct[slot]) / curr_dialogue_goal_slot_total[slot])
+                dialogue_slot_metrics[slot].append(
+                    float(curr_dialogue_goal_slot_correct[slot]) / curr_dialogue_goal_slot_total[slot])
             else:
                 dialogue_slot_metrics[slot].append(-1.0)
 
@@ -302,11 +304,10 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
 
     if informable_slots:
         goal_joint_total = float(correct_turns) / float(correct_turns + incorrect_turns)
-    
+
     slot_gj = {}
 
-    # for ele in all_inc_d:
-    #     print(ele)
+    print(all_inc_d)
 
     total_true_positives = 0
     total_false_negatives = 0
@@ -316,7 +317,6 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
     recall = {}
     fscore = {}
 
-
     # FSCORE for each requestable slot:
     if requestables:
         add_req = ["request"] + req_slots
@@ -324,21 +324,21 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         add_req = []
 
     for slot in informable_slots + add_req:
-    
+
         if slot not in ["request"] and slot not in req_slots:
             total_true_positives += true_positives[slot]
             total_false_positives += false_positives[slot]
             total_false_negatives += false_negatives[slot]
-    
+
         precision_denominator = (true_positives[slot] + false_positives[slot])
-        
+
         if precision_denominator != 0:
             precision[slot] = float(true_positives[slot]) / precision_denominator
         else:
             precision[slot] = 0
-        
+
         recall_denominator = (true_positives[slot] + false_negatives[slot])
-        
+
         if recall_denominator != 0:
             recall[slot] = float(true_positives[slot]) / recall_denominator
         else:
@@ -351,13 +351,12 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
             fscore[slot] = 0
 
         total_count_curr = true_positives[slot] + false_negatives[slot] + false_positives[slot]
-        
-        #if "req" in slot:
-        #if slot in ["area", "food", "price range", "request"]:
-        #print "Slot:", slot, "Count:", total_count_curr, true_positives[slot], false_positives[slot], false_negatives[slot], "[Precision, Recall, Fscore]=", round(precision[slot], 2), round(recall[slot], 2), round(fscore[slot], 2)
-        #print "Slot:", slot, "TP:", true_positives[slot], "FN:", false_negatives[slot], "FP:", false_positives[slot]
 
-    
+        # if "req" in slot:
+        # if slot in ["area", "food", "price range", "request"]:
+        # print "Slot:", slot, "Count:", total_count_curr, true_positives[slot], false_positives[slot], false_negatives[slot], "[Precision, Recall, Fscore]=", round(precision[slot], 2), round(recall[slot], 2), round(fscore[slot], 2)
+        # print "Slot:", slot, "TP:", true_positives[slot], "FN:", false_negatives[slot], "FP:", false_positives[slot]
+
     if requestables:
 
         requested_accuracy_all = req_match / req_full_turn_count
@@ -365,14 +364,14 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         if req_acc_total != 0:
             requested_accuracy_exist = req_acc_correct / req_acc_total
         else:
-            requested_accuracy_exist = 1.0 
+            requested_accuracy_exist = 1.0
 
         slot_gj["request"] = round(requested_accuracy_exist, 3)
-        #slot_gj["requestf"] = round(fscore["request"], 3)
-
+        # slot_gj["requestf"] = round(fscore["request"], 3)
 
     for slot in informable_slots:
-        slot_gj[slot] = round(float(slot_correct_turns[slot]) / float(slot_correct_turns[slot] + slot_incorrect_turns[slot]), 3)
+        slot_gj[slot] = round(
+            float(slot_correct_turns[slot]) / float(slot_correct_turns[slot] + slot_incorrect_turns[slot]), 3)
 
     # NIKOLA TODO: will be useful for goal joint
     if len(informable_slots) == 3:
@@ -382,12 +381,12 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
     if "request" in slot_gj:
         del slot_gj["request"]
 
-    return slot_gj
+    return slot_gj, all_inc_d
 
 
 def process_turn_hyp(transcription, language):
     """
-    Returns the clean (i.e. handling interpunction signs) string for the given language. 
+    Returns the clean (i.e. handling interpunction signs) string for the given language.
     """
     exclude = set(string.punctuation)
     exclude.remove("'")
@@ -398,15 +397,15 @@ def process_turn_hyp(transcription, language):
     transcription = transcription.replace(u"’", "'")
     transcription = transcription.replace(u"‘", "'")
     transcription = transcription.replace("don't", "dont")
-    if language == "it" or language == "italian":# or language == "en" or language == "english":
+    if language == "it" or language == "italian":  # or language == "en" or language == "english":
         transcription = transcription.replace("'", " ")
-    if language == "en" or language == "english":# or language == "en" or language == "english":
+    if language == "en" or language == "english":  # or language == "en" or language == "english":
         transcription = transcription.replace("'", "")
 
     return transcription
 
 
-def process_woz_dialogue(woz_dialogue,language,override_en_ontology):
+def process_woz_dialogue(woz_dialogue, language, override_en_ontology):
     """
     Returns a list of (tuple, belief_state) for each turn in the dialogue.
     """
@@ -442,7 +441,7 @@ def process_woz_dialogue(woz_dialogue,language,override_en_ontology):
     prev_belief_state = deepcopy(null_bs)
     dialogue_representation = []
 
-    # user talks first, so there is no requested DA initially. 
+    # user talks first, so there is no requested DA initially.
     current_req = [""]
 
     current_conf_slot = [""]
@@ -480,7 +479,7 @@ def process_woz_dialogue(woz_dialogue,language,override_en_ontology):
 
         current_transcription = turn["transcript"]
         current_transcription = process_turn_hyp(current_transcription, language)
-        
+
         read_asr = turn["asr"]
 
         current_asr = []
@@ -488,7 +487,6 @@ def process_woz_dialogue(woz_dialogue,language,override_en_ontology):
         for (hyp, score) in read_asr:
             current_hyp = process_turn_hyp(hyp, language)
             current_asr.append((current_hyp, score))
-
 
         old_trans = current_transcription
 
@@ -502,11 +500,11 @@ def process_woz_dialogue(woz_dialogue,language,override_en_ontology):
 
         current_bs = deepcopy(prev_belief_state)
 
-        #print "=====", prev_belief_state
+        # print "=====", prev_belief_state
         if "request" in prev_belief_state:
             del prev_belief_state["request"]
 
-        current_bs["request"] = [] # reset requestables at each turn
+        current_bs["request"] = []  # reset requestables at each turn
 
         for label in current_labels:
             (c_slot, c_value) = label
@@ -522,9 +520,10 @@ def process_woz_dialogue(woz_dialogue,language,override_en_ontology):
             if x[0] != "request":
                 curr_lab_dict[x[0]] = x[1]
 
-        dialogue_representation.append(((current_transcription, current_asr), current_req, current_conf_slot, current_conf_value, deepcopy(current_bs), deepcopy(prev_belief_state)))
+        dialogue_representation.append(((current_transcription, current_asr), current_req, current_conf_slot,
+                                        current_conf_value, deepcopy(current_bs), deepcopy(prev_belief_state)))
 
-        #print "====", current_transcription, "current bs", current_bs, "past bs", prev_belief_state, "this turn update", curr_lab_dict
+        # print "====", current_transcription, "current bs", current_bs, "past bs", prev_belief_state, "this turn update", curr_lab_dict
 
         prev_belief_state = deepcopy(current_bs)
 
@@ -540,14 +539,14 @@ def make_single_turn_dataset(file_name, mode, language):
     for idx in range(0, dialogue_count):
         woz_json[idx]["dialogue"] = woz_json[idx]["dialogue"][:1]
 
-    json.dump(woz_json, codecs.open(file_name + mode + "_single_turn_"+ language + ".json", 'w'))
+    json.dump(woz_json, codecs.open(file_name + mode + "_single_turn_" + language + ".json", 'w'))
 
 
-def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False):
+def load_woz_data(file_path, language, percentage=1.0, override_en_ontology=False):
     """
-    This method loads WOZ dataset as a collection of utterances. 
+    This method loads WOZ dataset as a collection of utterances.
 
-    Testing means load everything, no split. 
+    Testing means load everything, no split.
     """
 
     woz_json = json.load(codecs.open(file_path, "r", "utf-8"))
@@ -564,7 +563,7 @@ def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False
         print "Percentage is:", percentage, "so loading:", dialogue_count
 
     for idx in range(0, dialogue_count):
-        
+
         current_dialogue = process_woz_dialogue(woz_json[idx]["dialogue"], language, override_en_ontology)
         dialogues.append(current_dialogue)
 
@@ -576,23 +575,24 @@ def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False
                 prev_turn_label = current_label
 
             current_label = []
-            
+
             for req_slot in turn[4]["request"]:
                 current_label.append(("request", req_slot))
-                #print "adding reqslot:", req_slot
+                # print "adding reqslot:", req_slot
 
             # this now includes requests:
             for inf_slot in turn[4]:
                 # print (inf_slot, turn[5][inf_slot])
                 if inf_slot != "request":
                     current_label.append((inf_slot, turn[4][inf_slot]))
-#                    if inf_slot == "request":
-#                        print "!!!!!", inf_slot, turn[5][inf_slot]
+            #                    if inf_slot == "request":
+            #                        print "!!!!!", inf_slot, turn[5][inf_slot]
 
             transcription_and_asr = turn[0]
-            current_utterance = (transcription_and_asr, turn[1], turn[2], turn[3], current_label, turn[5]) #turn [5] is the past belief state
+            current_utterance = (transcription_and_asr, turn[1], turn[2], turn[3], current_label,
+                                 turn[5])  # turn [5] is the past belief state
 
-            #print "$$$$", current_utterance
+            # print "$$$$", current_utterance
 
             training_turns.append(current_utterance)
 
@@ -603,20 +603,21 @@ def load_woz_data(file_path, language, percentage=1.0,override_en_ontology=False
 
 def track_woz_data(dialogues, model_variables, word_vectors, dialogue_ontology, sessions):
     """
-    This method evaluates the WOZ dialogues. 
+    This method evaluates the WOZ dialogues.
     """
     evaluated_dialogues = []
     list_of_belief_states = []
 
     dialogue_count = len(dialogues)
-    #print "DIALOGUE COUNT: ", dialogue_count
+    # print "DIALOGUE COUNT: ", dialogue_count
 
     for idx in range(0, dialogue_count):
-        
-        if idx % 100 == 0 and (dialogue_count == 400): # progress for test 
+
+        if idx % 100 == 0 and (dialogue_count == 400):  # progress for test
             print idx, "/", dialogue_count, "done."
 
-        evaluated_dialogue, belief_states = track_dialogue_woz(model_variables, word_vectors, dialogue_ontology, dialogues[idx], sessions)
+        evaluated_dialogue, belief_states = track_dialogue_woz(model_variables, word_vectors, dialogue_ontology,
+                                                               dialogues[idx], sessions)
         evaluated_dialogues.append(evaluated_dialogue)
         list_of_belief_states.append(belief_states)
 
@@ -627,24 +628,24 @@ def track_woz_data(dialogues, model_variables, word_vectors, dialogue_ontology, 
         new_dialogue["dialogue_idx"] = d_idx
         new_dialogue["dialogue"] = evaluated_dialogues[d_idx]
         indexed_dialogues.append(new_dialogue)
-   
+
     return indexed_dialogues, list_of_belief_states
 
 
 def track_dialogue_woz(model_variables, word_vectors, dialogue_ontology, woz_dialogue, sessions):
     """
-    This produces a list of belief states predicted for the given WOZ dialogue. 
+    This produces a list of belief states predicted for the given WOZ dialogue.
     """
 
     prev_belief_states = {}
-    belief_states = {} # for each slot, a list of numpy arrays. 
+    belief_states = {}  # for each slot, a list of numpy arrays.
 
     turn_count = len(woz_dialogue)
-    #print "Turn count:", turn_count
+    # print "Turn count:", turn_count
 
-    slots_to_track = list(set(dialogue_ontology.keys()) & set(sessions.keys()) )
+    slots_to_track = list(set(dialogue_ontology.keys()) & set(sessions.keys()))
 
-    for slot in slots_to_track: 
+    for slot in slots_to_track:
         belief_states[slot] = {}
         if slot != "request":
             value_count = len(dialogue_ontology[slot]) + 1
@@ -655,7 +656,7 @@ def track_dialogue_woz(model_variables, word_vectors, dialogue_ontology, woz_dia
     # to be able to combine predictions, we must also return the belief states for each turn. So for each turn, a dictionary indexed by slot values which points to the distribution.
     list_of_belief_states = []
 
-    #print woz_dialogue
+    # print woz_dialogue
 
     for idx, trans_and_req_and_label_and_currlabel in enumerate(woz_dialogue):
 
@@ -670,61 +671,65 @@ def track_dialogue_woz(model_variables, word_vectors, dialogue_ontology, woz_dia
             else:
                 mx = model_variables
 
-            #print trans_and_req_and_label_and_currlabel
+            # print trans_and_req_and_label_and_currlabel
 
-            (transcription_and_asr, req_slot, conf_slot, conf_value, label, prev_belief_state) = trans_and_req_and_label_and_currlabel
+            (transcription_and_asr, req_slot, conf_slot, conf_value, label,
+             prev_belief_state) = trans_and_req_and_label_and_currlabel
 
             if idx == 0 or slot == "request":
                 # this should put empty belief state
-                example = [(transcription_and_asr, req_slot, conf_slot, conf_value, prev_belief_state)] 
+                example = [(transcription_and_asr, req_slot, conf_slot, conf_value, prev_belief_state)]
             else:
-                # and this has the previous prediction, the one we just made in the previous iteration. We do not want to use the right one, the one used for training. 
-                example = [(transcription_and_asr, req_slot, conf_slot, conf_value, prev_bs)] 
+                # and this has the previous prediction, the one we just made in the previous iteration. We do not want to use the right one, the one used for training.
+                example = [(transcription_and_asr, req_slot, conf_slot, conf_value, prev_bs)]
 
-            #print example
+                # print example
 
             transcription = transcription_and_asr[0]
             asr = transcription_and_asr[1]
 
             if slot == "request":
 
-                updated_belief_state = sliding_window_over_utterance(sessions[slot], example, word_vectors, dialogue_ontology, mx, slot, print_mode=False)
+                updated_belief_state = sliding_window_over_utterance(sessions[slot], example, word_vectors,
+                                                                     dialogue_ontology, mx, slot, print_mode=False)
                 # updated_belief_state[updated_belief_state < 0.5] = 0
                 list_of_belief_states[idx]["request"] = updated_belief_state
 
             else:
-                updated_belief_state = sliding_window_over_utterance(sessions[slot], example, word_vectors, dialogue_ontology, mx, slot, print_mode=False)
-                #updated_belief_state = softmax(updated_belief_state)
-                #updated_belief_state = update_belief_state(prev_belief_states[slot], new_belief_state)
+                updated_belief_state = sliding_window_over_utterance(sessions[slot], example, word_vectors,
+                                                                     dialogue_ontology, mx, slot, print_mode=False)
+                # updated_belief_state = softmax(updated_belief_state)
+                # updated_belief_state = update_belief_state(prev_belief_states[slot], new_belief_state)
                 prev_belief_states[slot] = updated_belief_state
                 list_of_belief_states[idx][slot] = updated_belief_state
 
             for idx_value, value in enumerate(dialogue_ontology[slot]):
                 if slot in "request":
-                    current_bs[slot] = print_belief_state_woz_requestables(dialogue_ontology[slot], updated_belief_state, threshold=0.5)
+                    current_bs[slot] = print_belief_state_woz_requestables(dialogue_ontology[slot],
+                                                                           updated_belief_state, threshold=0.5)
                 else:
-                    current_bs[slot] = print_belief_state_woz_informable(dialogue_ontology[slot], updated_belief_state, threshold=0.01) # swap to 0.001 Nikola
+                    current_bs[slot] = print_belief_state_woz_informable(dialogue_ontology[slot], updated_belief_state,
+                                                                         threshold=0.01)  # swap to 0.001 Nikola
                     #   print idx, slot, current_bs[slot], current_bs
 
         prev_bs = deepcopy(current_bs)
 
-        trans_plus_sys = "User: " + transcription 
+        trans_plus_sys = "User: " + transcription
         # + req_slot, conf_slot, conf_value
         if req_slot[0] != "":
             trans_plus_sys += "    System Request: " + str(req_slot)
 
-        if conf_slot[0] != "": 
+        if conf_slot[0] != "":
             trans_plus_sys += "    System Confirm: " + str(conf_slot) + " " + str(conf_value)
 
         trans_plus_sys += "   ASR: " + str(asr)
 
         predictions_for_dialogue.append((trans_plus_sys, {"True State": label}, {"Prediction": current_bs}))
 
-
     return predictions_for_dialogue, list_of_belief_states
 
 
-def print_belief_state_woz_informable(curr_values, distribution,threshold):
+def print_belief_state_woz_informable(curr_values, distribution, threshold):
     """
     Returns the top one if it is above threshold.
     """
@@ -733,9 +738,9 @@ def print_belief_state_woz_informable(curr_values, distribution,threshold):
     total_value = 0.0
 
     for idx, value in enumerate(curr_values):
-        
+
         total_value += distribution[idx]
-        
+
         if distribution[idx] >= threshold:
 
             if distribution[idx] >= max_score:
@@ -756,7 +761,7 @@ def print_belief_state_woz_requestables(curr_values, distribution, threshold):
 
     # now we just print to JSON file:
     for idx, value in enumerate(curr_values):
-        
+
         if distribution[idx] >= threshold:
             requested_slots.append(value)
 
@@ -765,9 +770,9 @@ def print_belief_state_woz_requestables(curr_values, distribution, threshold):
 
 def generate_data(utterances, word_vectors, dialogue_ontology, target_slot):
     """
-    Generates a data representation we can subsequently use. 
+    Generates a data representation we can subsequently use.
 
-    Let's say negative requests are now - those utterances which express no requestables. 
+    Let's say negative requests are now - those utterances which express no requestables.
     """
 
     # each list element is a tuple with features for that utterance (unigram, bigram, trigram).
@@ -779,10 +784,10 @@ def generate_data(utterances, word_vectors, dialogue_ontology, target_slot):
     negative_examples = {}
 
     list_of_slots = [target_slot]
-    list_of_slots = dialogue_ontology.keys() #["food", "area", "price range", "request"]
+    list_of_slots = dialogue_ontology.keys()  # ["food", "area", "price range", "request"]
 
     for slot_idx, slot in enumerate(list_of_slots):
-        
+
         positive_examples[slot] = []
         negative_examples[slot] = []
 
@@ -795,22 +800,22 @@ def generate_data(utterances, word_vectors, dialogue_ontology, target_slot):
 
             for (slotA, valueA) in utterance[4]:
                 if slotA == slot and (valueA != "none" and valueA != []):
-                    slot_expressed_in_utterance = True # if this is True, no negative examples for softmax.
-                    
-                    #if slot == "request":                
-                    #    print slotA, valueA, utterance, utterance[4]
+                    slot_expressed_in_utterance = True  #  if this is True, no negative examples for softmax.
+
+            # if slot == "request":
+            #    print slotA, valueA, utterance, utterance[4]
 
             if slot != "request":
 
                 for value_idx, value in enumerate(dialogue_ontology[slot]):
-                
-                    if (slot, value) in utterance[4]: # utterances are ((trans, asr), sys_req_act, sys_conf, labels)
+
+                    if (slot, value) in utterance[4]:  # utterances are ((trans, asr), sys_req_act, sys_conf, labels)
                         positive_examples[slot].append((utterance_idx, utterance, value_idx))
-                        #print "POS:", utterance_idx, utterance, value_idx, value
+                    # print "POS:", utterance_idx, utterance, value_idx, value
                     else:
                         if not slot_expressed_in_utterance:
                             negative_examples[slot].append((utterance_idx, utterance, value_idx))
-                            #print "NEG:", utterance_idx, utterance, value_idx, value
+                # print "NEG:", utterance_idx, utterance, value_idx, value
 
             elif slot == "request":
 
@@ -822,16 +827,16 @@ def generate_data(utterances, word_vectors, dialogue_ontology, target_slot):
                     values_expressed = []
 
                     for value_idx, value in enumerate(dialogue_ontology[slot]):
-                        if (slot, value) in utterance[4]: # utterances are ((trans, asr), sys_req_act, sys_conf, labels)
+                        if (slot, value) in utterance[
+                            4]:  # utterances are ((trans, asr), sys_req_act, sys_conf, labels)
                             values_expressed.append(value_idx)
 
                     positive_examples[slot].append((utterance_idx, utterance, values_expressed))
                     # print utterances[utterance_idx], "---", values_expressed
 
+    # positive_examples[slot] = set(positive_examples[slot])
+    # negative_examples[slot] = set(negative_examples[slot])
 
-        #positive_examples[slot] = set(positive_examples[slot])
-        #negative_examples[slot] = set(negative_examples[slot])
-    
     return feature_vectors, positive_examples, negative_examples
 
 
@@ -843,14 +848,14 @@ def binary_mask(example, requestable_count):
     zeros = numpy.zeros((requestable_count,), dtype=numpy.float32)
     for x in example:
         zeros[x] = 1
-    
+
     return zeros
 
 
 def delexicalise_utterance_values(utterance, target_slot, target_values):
     """
-    Takes a list of words which represent the current utterance, the loaded vectors, finds all occurrences of both slot name and slot value, 
-    and then returns the updated vector with "delexicalised tag" in them. 
+    Takes a list of words which represent the current utterance, the loaded vectors, finds all occurrences of both slot name and slot value,
+    and then returns the updated vector with "delexicalised tag" in them.
     """
 
     if type(utterance) is list:
@@ -859,7 +864,7 @@ def delexicalise_utterance_values(utterance, target_slot, target_values):
     if target_slot == "request":
         value_count = len(target_values)
     else:
-        value_count = len(target_values)+1
+        value_count = len(target_values) + 1
 
     delexicalised_vector = numpy.zeros((value_count,), dtype="float32")
 
@@ -876,25 +881,25 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
     """
     This method returns a minibatch of positive_count examples followed by negative_count examples.
     If these two are not set, it creates the full dataset (used for validation and test).
-    It returns: (features_unigram, features_bigram, features_trigram, features_slot, 
-                 features_values, y_labels) - all we need to pass to train. 
+    It returns: (features_unigram, features_bigram, features_trigram, features_slot,
+         features_values, y_labels) - all we need to pass to train.
     """
 
-    # total number of positive and negative examples. 
+    # total number of positive and negative examples.
     pos_example_count = len(positive_examples[target_slot])
     neg_example_count = len(negative_examples[target_slot])
 
     if target_slot != "request":
-        label_count = len(dialogue_ontology[target_slot]) + 1 # NONE
+        label_count = len(dialogue_ontology[target_slot]) + 1  # NONE
     else:
-        label_count = len(dialogue_ontology[target_slot]) 
-   
+        label_count = len(dialogue_ontology[target_slot])
+
     doing_validation = False
     # for validation?
     if positive_count is None:
         positive_count = pos_example_count
         doing_validation = True
-    if negative_count is None: 
+    if negative_count is None:
         negative_count = neg_example_count
         doing_validation = True
 
@@ -903,7 +908,7 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
         return None
 
     positive_indices = []
-    negative_indices = []   
+    negative_indices = []
 
     if positive_count > 0:
         positive_indices = numpy.random.choice(pos_example_count, positive_count)
@@ -948,28 +953,29 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
 
         (utterance_idx, utterance, value_idx) = example
         utterance_fv = feature_vectors[utterance_idx]
-        
+
         # prev belief state is in utterance[5]
         prev_belief_state = utterance[5]
 
         if idx_example < positive_count:
             if target_slot != "request":
-                labels.append(value_idx) # includes dontcare
+                labels.append(value_idx)  # includes dontcare
             else:
                 labels.append(binary_mask(value_idx, len(dialogue_ontology["request"])))
         else:
             if target_slot != "request":
-                labels.append(value_count) # NONE - for this we need to make sure to not include utterances which express this slot
+                labels.append(
+                    value_count)  # NONE - for this we need to make sure to not include utterances which express this slot
             else:
-                labels.append([]) #wont ever use this
+                labels.append([])  # wont ever use this
 
         # handling of previous labels:
         if target_slot != "request":
             prev_labels.append(prev_belief_state[target_slot])
 
-        # for now, we just deal with the utterance, and not with WOZ data. 
-        # TODO: need to get a series of delexicalised vectors, one for each value. 
-        
+        # for now, we just deal with the utterance, and not with WOZ data.
+        # TODO: need to get a series of delexicalised vectors, one for each value.
+
         delex_features = delexicalise_utterance_values(utterance[0][0], target_slot, dialogue_ontology[target_slot])
 
         features_full.append(utterance_fv[0])
@@ -987,13 +993,13 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
         features_delex.append(delex_features)
 
         prev_belief_state_vector = numpy.zeros((label_count,), dtype="float32")
-        
+
         if target_slot != "request":
 
             prev_value = prev_belief_state[target_slot]
 
             if prev_value == "none" or prev_value not in dialogue_ontology[target_slot]:
-                prev_belief_state_vector[label_count-1] = 1
+                prev_belief_state_vector[label_count - 1] = 1
             else:
                 prev_belief_state_vector[dialogue_ontology[target_slot].index(prev_value)] = 1
 
@@ -1023,7 +1029,7 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
             y_labels[idx, :] = labels[idx]
 
     if target_slot != "request":
-        y_labels[positive_count:, label_count-1] = 1# NONE, 0-indexing
+        y_labels[positive_count:, label_count - 1] = 1  # NONE, 0-indexing
 
     return (features_full, features_requested_slots, features_confirm_slots, \
             features_confirm_values, features_delex, y_labels, features_previous_state, utterances_full,
@@ -1031,9 +1037,7 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
 
 
 def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, target_slot, utterances, dialogue_ontology, \
-                        positive_examples, negative_examples, print_mode=False, epoch_id=0):
-
-
+                   positive_examples, negative_examples, print_mode=False, epoch_id=0):
     start_time = time.time()
 
     merged, keep_prob, x_full, x_delex, \
@@ -1060,19 +1064,18 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
     total_accuracy = 0.0
     element_count = 0
 
-    total_num_FP = 0.0 # FP
-    total_num_TP = 0.0 # TP
-    total_num_FN = 0.0 # FN -> prec = TP / (TP + FP), recall = TP / (TP + FN)
+    total_num_FP = 0.0  # FP
+    total_num_TP = 0.0  # TP
+    total_num_FN = 0.0  # FN -> prec = TP / (TP + FP), recall = TP / (TP + FN)
     total_num_TN = 0.0
 
     for idx in range(0, batch_count):
 
         left_range = idx * batch_size
-        right_range = min((idx+1) * batch_size, example_count)
-        curr_len = right_range - left_range # in the last batch, could be smaller than batch size
+        right_range = min((idx + 1) * batch_size, example_count)
+        curr_len = right_range - left_range  # in the last batch, could be smaller than batch size
 
         if idx in [batch_count - 1, 0]:
-
             xss_full = numpy.zeros((batch_size, longest_utterance_length, word_vector_size), dtype="float32")
             xss_sys_req = numpy.zeros((batch_size, word_vector_size), dtype="float32")
             xss_conf_slots = numpy.zeros((batch_size, word_vector_size), dtype="float32")
@@ -1081,10 +1084,10 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
             xss_labels = numpy.zeros((batch_size, label_size), dtype="float32")
             xss_prev_labels = numpy.zeros((batch_size, label_size), dtype="float32")
 
-            uss_full = numpy.zeros((batch_size, ), dtype=object)
-            uss_sys_req = numpy.zeros((batch_size, ), dtype=object)
-            uss_sys_conf_slots = numpy.zeros((batch_size, ), dtype=object)
-            uss_sys_conf_values = numpy.zeros((batch_size, ), dtype=object)
+            uss_full = numpy.zeros((batch_size,), dtype=object)
+            uss_sys_req = numpy.zeros((batch_size,), dtype=object)
+            uss_sys_conf_slots = numpy.zeros((batch_size,), dtype=object)
+            uss_sys_conf_values = numpy.zeros((batch_size,), dtype=object)
 
         xss_full[0:curr_len, :, :] = xs_full[left_range:right_range, :, :]
         xss_sys_req[0:curr_len, :] = xs_sys_req[left_range:right_range, :]
@@ -1094,55 +1097,58 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
         xss_labels[0:curr_len, :] = xs_labels[left_range:right_range, :]
         xss_prev_labels[0:curr_len, :] = xs_prev_labels[left_range:right_range, :]
 
-        uss_full[0:curr_len, ] = us_full[left_range:right_range,]
+        uss_full[0:curr_len, ] = us_full[left_range:right_range, ]
         uss_full[curr_len:, ] = ''
-        uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range,]
+        uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range, ]
         uss_sys_req[curr_len:, ] = ''
-        uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range,]
+        uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range, ]
         uss_sys_conf_slots[curr_len:, ] = ''
-        uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range,]
+        uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range, ]
         uss_sys_conf_values[curr_len:, ] = ''
-    # ==============================================================================================
-        [summary, current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run([merged, predictions, y, accuracy, update_coefficient],
-                         feed_dict={x_full: xss_full, x_delex: xss_delex, \
-                                    requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
-                                    system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels, keep_prob: 1.0,
-                                    u_full: numpy.array([('hello '*40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
-                                    u_system_act_confirm_slots: uss_sys_conf_slots,
-                                    u_system_act_confirm_values: uss_sys_conf_values})
-        valid_writer.add_summary(summary, example_count*(epoch_id - 1)+ idx)
-#       below lines print predictions for small batches to see what is being predicted
-#        if idx == 0 or idx == batch_count - 2:
-#            #print current_y.shape, xss_labels.shape, xs_labels.shape
-#            print "\n\n", numpy.argmax(current_y, axis=1), "\n", numpy.argmax(xss_labels, axis=1), "\n==============================\n\n"
+        # ==============================================================================================
+        [summary, current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run(
+            [merged, predictions, y, accuracy, update_coefficient],
+            feed_dict={x_full: xss_full, x_delex: xss_delex, \
+                       requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
+                       system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels,
+                       keep_prob: 1.0,
+                       u_full: numpy.array([('hello ' * 40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
+                       u_system_act_confirm_slots: uss_sys_conf_slots,
+                       u_system_act_confirm_values: uss_sys_conf_values})
+        valid_writer.add_summary(summary, example_count * (epoch_id - 1) + idx)
+        #       below lines print predictions for small batches to see what is being predicted
+        #        if idx == 0 or idx == batch_count - 2:
+        #            #print current_y.shape, xss_labels.shape, xs_labels.shape
+        #            print "\n\n", numpy.argmax(current_y, axis=1), "\n", numpy.argmax(xss_labels, axis=1), "\n==============================\n\n"
 
         total_accuracy += current_accuracy
         element_count += 1
-    
+
     eval_accuracy = round(total_accuracy / element_count, 3)
 
     if print_mode:
-        print "Epoch", epoch_id, " Example count: ", example_count, "[Accuracy] = ", eval_accuracy, " ----- update coeff:", update_coefficient_load # , round(end_time - start_time, 1), "seconds. ---"
+        print "Epoch", epoch_id, " Example count: ", example_count, "[Accuracy] = ", eval_accuracy, " ----- update coeff:", update_coefficient_load  # , round(end_time - start_time, 1), "seconds. ---"
 
     return eval_accuracy
+
 
 def normalise_word_vectors(word_vectors, norm=1.0):
     """
     This method normalises the collection of word vectors provided in the word_vectors dictionary.
     """
     for word in word_vectors:
-        word_vectors[word] /= math.sqrt((word_vectors[word]**2).sum() + 1e-6)
+        word_vectors[word] /= math.sqrt((word_vectors[word] ** 2).sum() + 1e-6)
         word_vectors[word] = word_vectors[word] * norm
     return word_vectors
 
 
 def load_word_vectors(file_destination, primary_language="english"):
     """
-    This method loads the word vectors from the supplied file destination. 
-    It loads the dictionary of word vectors and prints its size and the vector dimensionality. 
+    This method loads the word vectors from the supplied file destination.
+    It loads the dictionary of word vectors and prints its size and the vector dimensionality.
     """
-    #print "XAVIER - returning null dictionary"
-    #return {}
+    # print "XAVIER - returning null dictionary"
+    # return {}
 
     print "Loading pretrained word vectors from", file_destination, "- treating", primary_language, "as the primary language."
     word_dictionary = {}
@@ -1163,40 +1169,41 @@ def load_word_vectors(file_destination, primary_language="english"):
 
     language_key = lp[primary_language]
 
-    f = codecs.open(file_destination, 'r', 'utf-8') 
+    f = codecs.open(file_destination, 'r', 'utf-8')
 
     for line in f:
-        
-        line = line.split(" ", 1)   
+
+        line = line.split(" ", 1)
         transformed_key = line[0].lower()
 
-        if language_key in transformed_key:     
-            
+        if language_key in transformed_key:
+
             transformed_key = transformed_key.replace(language_key, "")
-        
+
             try:
                 transformed_key = unicode(transformed_key)
             except:
                 print "Can't convert the key to unicode:", transformed_key
-            
+
             word_dictionary[transformed_key] = numpy.fromstring(line[1], dtype="float32", sep=" ")
 
             if word_dictionary[transformed_key].shape[0] != 300:
                 print transformed_key, word_dictionary[transformed_key].shape
-        
-    print len(word_dictionary), "vectors loaded from", file_destination     
+
+    print len(word_dictionary), "vectors loaded from", file_destination
 
     return normalise_word_vectors(word_dictionary)
 
 
-def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utterance_length=40, use_asr=False, use_transcription_in_training=False):
+def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utterance_length=40, use_asr=False,
+                            use_transcription_in_training=False):
     """
-    This method returns feature vectors for all dialogue utterances. 
+    This method returns feature vectors for all dialogue utterances.
     It returns a tuple of lists, where each list consists of all feature vectors for ngrams of that length.
 
-    This method doesn't care about the labels: other methods assign actual or fake labels later on. 
+    This method doesn't care about the labels: other methods assign actual or fake labels later on.
 
-    This can run on any size, including a single utterance. 
+    This can run on any size, including a single utterance.
 
     """
 
@@ -1209,7 +1216,6 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
     for j in range(0, utterance_count):
         ngram_feature_vectors.append(numpy.zeros((longest_utterance_length * word_vector_size,), dtype="float32"))
 
-
     requested_slot_vectors = []
     confirm_slots = []
     confirm_values = []
@@ -1217,16 +1223,16 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
 
     for idx, utterance in enumerate(utterances):
 
-        full_fv = numpy.zeros((longest_utterance_length * word_vector_size, ), dtype="float32")
+        full_fv = numpy.zeros((longest_utterance_length * word_vector_size,), dtype="float32")
 
-        #use_asr = True
+        # use_asr = True
 
         if use_asr:
-            full_asr = utterances[idx][0][1] # just use ASR
+            full_asr = utterances[idx][0][1]  # just use ASR
         else:
-            full_asr = [(utterances[idx][0][0], 1.0)] # else create (transcription, 1.0)
+            full_asr = [(utterances[idx][0][0], 1.0)]  # else create (transcription, 1.0)
 
-        #print "Full ASR is", full_asr
+        # print "Full ASR is", full_asr
 
         requested_slots = utterances[idx][1]
         current_requested_vector = numpy.zeros((word_vector_size,), dtype="float32")
@@ -1237,7 +1243,7 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
 
         requested_slot_vectors.append(current_requested_vector)
 
-        curr_confirm_slots = utterances[idx][2] 
+        curr_confirm_slots = utterances[idx][2]
         curr_confirm_values = utterances[idx][3]
 
         current_conf_slot_vector = numpy.zeros((word_vector_size,), dtype="float32")
@@ -1273,22 +1279,21 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
         asr_mass = 0.0
 
         for idx1 in range(0, asr_count):
-            asr_mass += full_asr[idx1][1] #+ full_asr[1][1] + full_asr[2][1] + full_asr[3][1] + full_asr[4][1] 
+            asr_mass += full_asr[idx1][1]  # + full_asr[1][1] + full_asr[2][1] + full_asr[3][1] + full_asr[4][1]
 
         if use_transcription_in_training:
-            transcription_mass = asr_mass - full_asr[asr_count-1][1]
-            extra_example = (transcription, transcription_mass) 
-            full_asr[asr_count-1] = extra_example
+            transcription_mass = asr_mass - full_asr[asr_count - 1][1]
+            extra_example = (transcription, transcription_mass)
+            full_asr[asr_count - 1] = extra_example
             asr_mass = 2 * transcription_mass
 
-
-#        print "======", full_asr
+        #        print "======", full_asr
 
         for (c_example, asr_coeff) in full_asr[0:asr_count]:
 
-            #print c_example, asr_coeff
+            # print c_example, asr_coeff
 
-            full_fv = numpy.zeros((longest_utterance_length * word_vector_size, ), dtype="float32")
+            full_fv = numpy.zeros((longest_utterance_length * word_vector_size,), dtype="float32")
 
             if c_example != "":
                 # print c_example
@@ -1300,27 +1305,23 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
                     word = unicode(word)
 
                     if word not in word_vectors:
-                            
                         word_vectors[word] = xavier_vector(word)
-                        
-                        #print "== Over Utterance: Generating random word vector for", word.encode('utf-8'), ":::", numpy.sum(word_vectors[word])
-                        
+
+                    # print "== Over Utterance: Generating random word vector for", word.encode('utf-8'), ":::", numpy.sum(word_vectors[word])
+
                     try:
-                        full_fv[word_idx * word_vector_size : (word_idx+1) * word_vector_size] = word_vectors[word] 
+                        full_fv[word_idx * word_vector_size: (word_idx + 1) * word_vector_size] = word_vectors[word]
                     except:
                         print "Something off with word:", word, word in word_vectors
-                    
 
             asr_weighted_feature_vectors.append(numpy.reshape(full_fv, (longest_utterance_length, word_vector_size)))
 
-
         if len(asr_weighted_feature_vectors) != asr_count:
-            print "££££££££££££££ Length of weighted vectors is:", len(asr_weighted_feature_vectors)    
+            print "££££££££££££££ Length of weighted vectors is:", len(asr_weighted_feature_vectors)
 
-        # list of [40, 300] into [len_list * 40, 300]
+            # list of [40, 300] into [len_list * 40, 300]
         # print len(asr_weighted_feature_vectors), asr_weighted_feature_vectors[0].shape
         ngram_feature_vectors[idx] = numpy.concatenate(asr_weighted_feature_vectors, axis=0)
-
 
     list_of_features = []
 
@@ -1329,16 +1330,18 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
     for idx in range(0, utterance_count):
         list_of_features.append((ngram_feature_vectors[idx],
                                  requested_slot_vectors[idx],
-                                 confirm_slots[idx], 
+                                 confirm_slots[idx],
                                  confirm_values[idx],
                                  ))
 
     return list_of_features
 
 
-def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name, dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096, model_name='models', batch_size=256, single_turn=False):
+def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name,
+              dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096,
+              model_name='models', batch_size=256, single_turn=False):
     """
-    This method trains a model on the data and saves the file parameters to a file which can 
+    This method trains a model on the data and saves the file parameters to a file which can
     then be loaded to do evaluation.
     """
 
@@ -1352,11 +1355,14 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     slots = dialogue_ontology.keys()
 
-    _, utterances_train2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_train_" + ("single_turn_" if single_turn else "") + language + ".json", language) # parameter determines which ones are loaded
-    
+    _, utterances_train2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_train_" + (
+        "single_turn_" if single_turn else "") + language + ".json",
+                                         language)  # parameter determines which ones are loaded
+
     utterance_count = len(utterances_train2)
 
-    _, utterances_val2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_validate_" + ("single_turn_" if single_turn else "") + language + ".json", language)
+    _, utterances_val2 = load_woz_data("data/" + dataset_name + "/" + dataset_name + "_validate_" + (
+        "single_turn_" if single_turn else "") + language + ".json", language)
 
     val_count = len(utterances_val2)
 
@@ -1365,31 +1371,30 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     print "\nTraining using:", dataset_name, " data - Utterance count:", utterance_count
 
-
-    # training feature vectors and positive and negative examples list. 
+    # training feature vectors and positive and negative examples list.
     print "Generating data for training set:"
-    feature_vectors, positive_examples, negative_examples = generate_data(utterances_train, word_vectors, dialogue_ontology, target_slot)
+    feature_vectors, positive_examples, negative_examples = generate_data(utterances_train, word_vectors,
+                                                                          dialogue_ontology, target_slot)
 
     print "Generating data for validation set:"
     # same for validation (can pre-compute full representation, will be used after each epoch):
     fv_validation, positive_examples_validation, negative_examples_validation = \
-                generate_data(utterances_val, word_vectors, dialogue_ontology, target_slot)
+        generate_data(utterances_val, word_vectors, dialogue_ontology, target_slot)
 
     val_data = generate_examples(target_slot, fv_validation, word_vectors, dialogue_ontology,
-                                positive_examples_validation, negative_examples_validation)
-
+                                 positive_examples_validation, negative_examples_validation)
 
     if val_data is None:
         print "val data is none"
         return
 
-    # will be used to save model parameters with best validation scores.  
+    # will be used to save model parameters with best validation scores.
     saver = tf.train.Saver()
 
     init = tf.global_variables_initializer()
     sess = tf.Session()
     train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)
-    valid_writer = tf.summary.FileWriter('./logs/{}/{}/valid '.format(model_name, target_slot) , sess.graph)
+    valid_writer = tf.summary.FileWriter('./logs/{}/{}/valid '.format(model_name, target_slot), sess.graph)
     # sess = tf_debug.TensorBoardDebugWrapperSession(sess, 'localhost:6064')
     sess.run(init)
 
@@ -1402,16 +1407,16 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     start_time = time.time()
 
     ratio = {}
-    
+
     for slot in dialogue_ontology:
         if slot not in ratio:
-            ratio[slot] = batch_size / 2 # fewer negatives
-    
+            ratio[slot] = batch_size / 2  # fewer negatives
+
     epoch = 0
     last_update = -1
-    counter=0
+    counter = 0
     while epoch < max_epoch:
-        
+
         sys.stdout.flush()
 
         epoch += 1
@@ -1424,15 +1429,16 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         total_accuracy = 0
         element_count = 0
         for batch_id in range(batches_per_epoch):
-            
             random_positive_count = ratio[target_slot]
             random_negative_count = batch_size - random_positive_count
 
             batch_data = generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontology,
-                positive_examples, negative_examples, random_positive_count, random_negative_count)
+                                           positive_examples, negative_examples, random_positive_count,
+                                           random_negative_count)
 
-            (batch_xs_full, batch_sys_req, batch_sys_conf_slots, batch_sys_conf_values, 
-                batch_delex, batch_ys, batch_ys_prev, batch_u_full, batch_u_sys_req, batch_u_sys_conf_slots, batch_u_sys_conf_values) = batch_data
+            (batch_xs_full, batch_sys_req, batch_sys_conf_slots, batch_sys_conf_values,
+             batch_delex, batch_ys, batch_ys_prev, batch_u_full, batch_u_sys_req, batch_u_sys_conf_slots,
+             batch_u_sys_conf_values) = batch_data
 
             # merge = tf.summary.merge_all()
 
@@ -1444,7 +1450,9 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                                                                system_act_confirm_values: batch_sys_conf_values, \
                                                                y_: batch_ys, y_past_state: batch_ys_prev,
                                                                keep_prob: 0.5,
-                                                               u_full: numpy.array([('hello '*40)[:-1]] + list(batch_u_full)), u_requested_slots: batch_u_sys_req,
+                                                               u_full: numpy.array(
+                                                                   [('hello ' * 40)[:-1]] + list(batch_u_full)),
+                                                               u_requested_slots: batch_u_sys_req,
                                                                u_system_act_confirm_slots: batch_u_sys_conf_slots,
                                                                u_system_act_confirm_values: batch_u_sys_conf_values})
 
@@ -1455,7 +1463,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             element_count += 1
 
         train_accuracy = round(total_accuracy / element_count, 3)
-            # print(emb.shape)
+        # print(emb.shape)
         # ================================ VALIDATION ==============================================
         print "Epoch", epoch, " Train accuracy: ", train_accuracy
 
@@ -1465,15 +1473,18 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                 print "Epoch", "0", "to", epoch, "took", round(time.time() - start_time, 2), "seconds."
 
             else:
-                print "Epoch", epoch-5, "to", epoch, "took", round(time.time() - start_time, 2), "seconds."
+                print "Epoch", epoch - 5, "to", epoch, "took", round(time.time() - start_time, 2), "seconds."
                 start_time = time.time()
 
-        current_f_score = evaluate_model(valid_writer, dataset_name, sess, model_variables, val_data, target_slot, utterances_val, \
-        dialogue_ontology, positive_examples_validation, negative_examples_validation, print_mode=True, epoch_id=epoch)
+        current_f_score = evaluate_model(valid_writer, dataset_name, sess, model_variables, val_data, target_slot,
+                                         utterances_val, \
+                                         dialogue_ontology, positive_examples_validation, negative_examples_validation,
+                                         print_mode=True, epoch_id=epoch)
 
         stime = time.time()
         current_metric = current_f_score
-        print " Validation metric for slot:", target_slot, " :", round(current_metric, 5), " eval took", round(time.time() - stime, 2), "last update at:", last_update, "/", max_epoch
+        print " Validation metric for slot:", target_slot, " :", round(current_metric, 5), " eval took", round(
+            time.time() - stime, 2), "last update at:", last_update, "/", max_epoch
 
         # and if we got a new high score for validation f-score, we need to save the parameters:
         if current_metric > best_f_score:
@@ -1491,25 +1502,27 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
                     # max_epoch = int(epoch * 1.2)
                     # print "Increasing max epoch to:", max_epoch
 
-
-            print "\n ====================== New best validation metric:", round(current_metric, 4),  \
-                  " - saving these parameters. Epoch is:", epoch + 1, "/", max_epoch, "---------------- ===========  \n"
+            print "\n ====================== New best validation metric:", round(current_metric, 4), \
+                " - saving these parameters. Epoch is:", epoch + 1, "/", max_epoch, "---------------- ===========  \n"
 
             best_f_score = current_metric
-            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" +  str(override_en_ontology) + "_" + \
-                   str(dataset_name) + "_" + str(target_slot)+ "_" + str(exp_name) + "_" + str(percentage) + ".ckpt"
+            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" + str(
+                override_en_ontology) + "_" + \
+                           str(dataset_name) + "_" + str(target_slot) + "_" + str(exp_name) + "_" + str(
+                percentage) + ".ckpt"
 
             save_path = saver.save(sess, path_to_save)
 
         if epoch > 100:
-            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" + str(override_en_ontology) + "_" + \
+            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" + str(
+                override_en_ontology) + "_" + \
                            str(dataset_name) + "_" + str(target_slot) + "_" + str(exp_name) + "_" + str(
                 percentage) + "_last_ep" + ".ckpt"
 
             save_path = saver.save(sess, path_to_save)
 
     print "The best parameters achieved a validation metric of", round(best_f_score, 4)
-    
+
 
 def print_slot_predictions(distribution, slot_values, target_slot, threshold=0.05):
     """
@@ -1519,8 +1532,8 @@ def print_slot_predictions(distribution, slot_values, target_slot, threshold=0.0
     predicted_values = []
     for idx, value in enumerate(slot_values):
         if distribution[idx] >= threshold:
-            predicted_values += ((value, round(distribution[idx], 2) )) #, round(post_sf[idx], 2) ))
-    
+            predicted_values += ((value, round(distribution[idx], 2)))  # , round(post_sf[idx], 2) ))
+
     print "Predictions for", str(target_slot + ":"), predicted_values
 
     return predicted_values
@@ -1533,19 +1546,21 @@ def return_slot_predictions(distribution, slot_values, target_slot, threshold=0.
     predicted_values = []
     for idx, value in enumerate(slot_values):
         if distribution[idx] >= threshold:
-            predicted_values += ((value, round(distribution[idx], 2) )) #, round(post_sf[idx], 2) ))
-    
+            predicted_values += ((value, round(distribution[idx], 2)))  # , round(post_sf[idx], 2) ))
+
     return predicted_values
 
 
-def sliding_window_over_utterance(sess, utterance, word_vectors, dialogue_ontology, model_variables, target_slot, print_mode=True):
+def sliding_window_over_utterance(sess, utterance, word_vectors, dialogue_ontology, model_variables, target_slot,
+                                  print_mode=True):
     """
     """
 
     if type(model_variables) is dict:
         model_variables = model_variables[target_slot]
 
-    list_of_outputs = test_utterance(sess, utterance, word_vectors, dialogue_ontology, model_variables, target_slot, print_mode)
+    list_of_outputs = test_utterance(sess, utterance, word_vectors, dialogue_ontology, model_variables, target_slot,
+                                     print_mode)
     belief_state = list_of_outputs[0]
 
     return belief_state
@@ -1553,7 +1568,7 @@ def sliding_window_over_utterance(sess, utterance, word_vectors, dialogue_ontolo
 
 def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_variables, target_slot, do_print=True):
     """
-    Returns a list of belief states, to be weighted later. 
+    Returns a list of belief states, to be weighted later.
     """
 
     potential_values = dialogue_ontology[target_slot]
@@ -1563,7 +1578,7 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
     else:
         value_count = len(potential_values) + 1
 
-    # should be a list of features for each ngram supplied. 
+    # should be a list of features for each ngram supplied.
     fv_tuples = extract_feature_vectors(utterances, word_vectors, use_asr=True)
     utterance_count = len(utterances)
 
@@ -1582,7 +1597,7 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
     uss_full = []
     uss_sys_req = []
     uss_sys_conf_slots = []
-    uss_sys_conf_values = [] 
+    uss_sys_conf_values = []
 
     for idx_hyp, extracted_fv in enumerate(fv_tuples):
 
@@ -1591,19 +1606,19 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
         prev_belief_state = utterances[idx_hyp][4]
 
         prev_belief_state_vector = numpy.zeros((value_count,), dtype="float32")
-        
+
         if target_slot != "request":
 
             prev_value = prev_belief_state[target_slot]
 
             if prev_value == "none" or prev_value not in dialogue_ontology[target_slot]:
-                prev_belief_state_vector[value_count-1] = 1
+                prev_belief_state_vector[value_count - 1] = 1
             else:
                 prev_belief_state_vector[dialogue_ontology[target_slot].index(prev_value)] = 1
 
         features_previous_state.append(prev_belief_state_vector)
 
-        (full_utt, sys_req, conf_slot, conf_value) = extracted_fv 
+        (full_utt, sys_req, conf_slot, conf_value) = extracted_fv
 
         delex_vector = delexicalise_utterance_values(current_utterance, target_slot, dialogue_ontology[target_slot])
 
@@ -1611,7 +1626,7 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
         uss_sys_req.append('<new_slot_val>'.join(utterances[idx_hyp][1]))
         uss_sys_conf_slots.append('<new_conf_slot>'.join(utterances[idx_hyp][2]))
         uss_sys_conf_values.append('<new_conf_val>'.join(utterances[idx_hyp][3]))
-        
+
         fv_full.append(full_utt)
         delexicalised_features.append(delex_vector)
         fv_sys_req.append(sys_req)
@@ -1620,14 +1635,15 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
 
     slot_values = numpy.array(slot_values)
     candidate_values = numpy.array(candidate_values)
-    delexicalised_features = numpy.array(delexicalised_features) # will be [batch_size, label_size, longest_utterance_length, vector_dimension]
+    delexicalised_features = numpy.array(
+        delexicalised_features)  # will be [batch_size, label_size, longest_utterance_length, vector_dimension]
 
     fv_sys_req = numpy.array(fv_sys_req)
     fv_conf_slot = numpy.array(fv_conf_slot)
     fv_conf_val = numpy.array(fv_conf_val)
     fv_full = numpy.array(fv_full)
     features_previous_state = numpy.array(features_previous_state)
-    
+
     uss_full = numpy.array(uss_full)
     uss_sys_req = numpy.array(uss_sys_req)
     uss_sys_conf_slots = numpy.array(uss_sys_conf_slots)
@@ -1639,12 +1655,17 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
     num_positives, classified_positives, y, predictions, true_predictions, correct_prediction, \
     true_positives, train_step, update_coefficient, u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
 
-    distribution, update_coefficient_load = sess.run([y, update_coefficient], feed_dict={x_full: fv_full, x_delex: delexicalised_features, \
-                                      requested_slots: fv_sys_req, \
-                                      system_act_confirm_slots: fv_conf_slot, y_past_state: features_previous_state, system_act_confirm_values: fv_conf_val, \
-                                      keep_prob: 1.0, u_full: numpy.array([('hello '*40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
-				      u_system_act_confirm_slots: uss_sys_conf_slots, u_system_act_confirm_values: uss_sys_conf_values})
-
+    distribution, update_coefficient_load = sess.run([y, update_coefficient],
+                                                     feed_dict={x_full: fv_full, x_delex: delexicalised_features, \
+                                                                requested_slots: fv_sys_req, \
+                                                                system_act_confirm_slots: fv_conf_slot,
+                                                                y_past_state: features_previous_state,
+                                                                system_act_confirm_values: fv_conf_val, \
+                                                                keep_prob: 1.0, u_full: numpy.array(
+                                                             [('hello ' * 40)[:-1]] + list(uss_full)),
+                                                                u_requested_slots: uss_sys_req,
+                                                                u_system_act_confirm_slots: uss_sys_conf_slots,
+                                                                u_system_act_confirm_values: uss_sys_conf_values})
 
     belief_state = distribution[:, 0]
 
@@ -1656,7 +1677,7 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
         list_of_belief_states.append(current_distribution)
 
     if do_print:
-        print_slot_predictions(list_of_belief_states[0], potential_values, target_slot, threshold=0.1)
+        print_slot_predictions(list_of_belief_states[0], potential_values, target_slot, threshold=0.5)
 
     if len(list_of_belief_states) == 1:
         return [list_of_belief_states[0]]
@@ -1667,14 +1688,15 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
     sf = numpy.exp(x)
-    sf = sf/numpy.sum(sf, axis=0)
+    sf = sf / numpy.sum(sf, axis=0)
     return sf
 
 
 class NeuralBeliefTracker:
     """
-    Call to initialise the model with pre-trained parameters and given ontology. 
+    Call to initialise the model with pre-trained parameters and given ontology.
     """
+
     def __init__(self, config_filepath):
 
         config = ConfigParser.RawConfigParser()
@@ -1689,15 +1711,14 @@ class NeuralBeliefTracker:
         self.single_turn = config.get("model", "single_turn") in ["True", "true"]
         dataset_name = config.get("model", "dataset_name")
 
-
         word_vectors = {}
-        word_vector_destination = config.get("data", "word_vectors") 
+        word_vector_destination = config.get("data", "word_vectors")
 
         lp = {}
         lp["english"] = u"en"
         lp["german"] = u"de"
         lp["italian"] = u"it"
-       
+
         try:
             language = config.get("model", "language")
             language_suffix = lp[language]
@@ -1717,11 +1738,12 @@ class NeuralBeliefTracker:
         self.train_model = config.get("train", "train_model")
         self.eval_model = config.get("test", "eval_model")
 
-        if not os.path.isfile(word_vector_destination): 
+        if not os.path.isfile(word_vector_destination):
             print "Vectors not there, downloading small Paragram and putting it there."
             os.system("mkdir -p word-vectors/")
             os.system("mkdir -p results/")
-            os.system("wget -O word-vectors/prefix_paragram.txt https://www.dropbox.com/s/r35ih722bbjpn8b/prefix_paragram.txt?dl=0")
+            os.system(
+                "wget -O word-vectors/prefix_paragram.txt https://www.dropbox.com/s/r35ih722bbjpn8b/prefix_paragram.txt?dl=0")
             word_vector_destination = "word-vectors/prefix_paragram.txt"
 
         os.system("mkdir -p ./models/{}".format(self.train_model))
@@ -1730,14 +1752,14 @@ class NeuralBeliefTracker:
         word_vectors["tag-slot"] = xavier_vector("tag-slot")
         word_vectors["tag-value"] = xavier_vector("tag-value")
 
-        ontology_filepath = config.get("model", "ontology_filepath") 
+        ontology_filepath = config.get("model", "ontology_filepath")
         dialogue_ontology = json.load(codecs.open(ontology_filepath, "r", "utf-8"))
         dialogue_ontology = dialogue_ontology["informable"]
         slots = dialogue_ontology.keys()
 
         word_vector_size = random.choice(word_vectors.values()).shape[0]
 
-        # a bit of hard-coding to make our lives easier. 
+        # a bit of hard-coding to make our lives easier.
         if u"price" in word_vectors and u"range" in word_vectors:
             word_vectors[u"price range"] = word_vectors[u"price"] + word_vectors[u"range"]
         if u"post" in word_vectors and u"code" in word_vectors:
@@ -1748,11 +1770,11 @@ class NeuralBeliefTracker:
             word_vectors[u"addressess"] = word_vectors[u"addresses"]
         if u"dont" in word_vectors:
             word_vectors[u"don't"] = word_vectors[u"dont"]
-            
+
         if language == "italian":
             word_vectors["dontcare"] = word_vectors["non"] + word_vectors["importa"]
             word_vectors["non importa"] = word_vectors["non"] + word_vectors["importa"]
-        
+
         if language == "german":
             word_vectors["dontcare"] = word_vectors["es"] + word_vectors["ist"] + word_vectors["egal"]
             word_vectors["es ist egal"] = word_vectors["es"] + word_vectors["ist"] + word_vectors["egal"]
@@ -1760,7 +1782,7 @@ class NeuralBeliefTracker:
         exp_name = config.get("data", "exp_name")
 
         config_model_type = config.get("model", "model_type")
-        use_cnn  = False
+        use_cnn = False
 
         if config_model_type == "cnn":
             print "----------- Config Model Type:", config_model_type, "-------------"
@@ -1776,8 +1798,6 @@ class NeuralBeliefTracker:
             self.value_specific_decoder = True
         else:
             self.value_specific_decoder = False
-
-
 
         self.learn_belief_state_update = config.get("model", "learn_belief_state_update")
 
@@ -1801,7 +1821,6 @@ class NeuralBeliefTracker:
             for value in dialogue_ontology[slot_name]:
                 value = unicode(value)
                 if u" " not in value and value not in word_vectors:
-
                     word_vectors[unicode(value)] = xavier_vector(unicode(value))
                     print "-- Generating word vector for:", value.encode("utf-8"), ":::", numpy.sum(word_vectors[value])
 
@@ -1839,51 +1858,60 @@ class NeuralBeliefTracker:
         for slot in dialogue_ontology:
             print "Initialisation of model variables for slot:", slot
             if slot == "request":
-                
+
                 slot_vectors = numpy.zeros((len(dialogue_ontology[slot]), 300), dtype="float32")
                 value_vectors = numpy.zeros((len(dialogue_ontology[slot]), 300), dtype="float32")
 
                 for value_idx, value in enumerate(dialogue_ontology[slot]):
-                        slot_vectors[value_idx, :] = word_vectors[slot]
-                        value_vectors[value_idx, :] = word_vectors[value]
+                    slot_vectors[value_idx, :] = word_vectors[slot]
+                    value_vectors[value_idx, :] = word_vectors[value]
 
-                self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]), slot_vectors, value_vectors, \
-                     use_delex_features=self.use_delex_features, use_softmax=False, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, use_elmo=self.use_elmo, single_turn=self.single_turn)
+                self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]),
+                                                              slot_vectors, value_vectors, \
+                                                              use_delex_features=self.use_delex_features,
+                                                              use_softmax=False,
+                                                              value_specific_decoder=self.value_specific_decoder,
+                                                              learn_belief_state_update=self.learn_belief_state_update,
+                                                              use_elmo=self.use_elmo, single_turn=self.single_turn)
             else:
-                
-                slot_vectors = numpy.zeros((len(dialogue_ontology[slot])+1, 300), dtype="float32") # +1 for None
-                value_vectors = numpy.zeros((len(dialogue_ontology[slot])+1, 300), dtype="float32")
+
+                slot_vectors = numpy.zeros((len(dialogue_ontology[slot]) + 1, 300), dtype="float32")  # +1 for None
+                value_vectors = numpy.zeros((len(dialogue_ontology[slot]) + 1, 300), dtype="float32")
 
                 for value_idx, value in enumerate(dialogue_ontology[slot]):
-                        slot_vectors[value_idx, :] = word_vectors[slot]
-                        value_vectors[value_idx, :] = word_vectors[value]
+                    slot_vectors[value_idx, :] = word_vectors[slot]
+                    value_vectors[value_idx, :] = word_vectors[value]
 
-                self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]), slot_vectors, value_vectors, use_delex_features=self.use_delex_features, \
-                                                 use_softmax=True, value_specific_decoder=self.value_specific_decoder, learn_belief_state_update=self.learn_belief_state_update, use_elmo=self.use_elmo, single_turn=self.single_turn)
-        
+                self.model_variables[slot] = model_definition(word_vector_size, len(dialogue_ontology[slot]),
+                                                              slot_vectors, value_vectors,
+                                                              use_delex_features=self.use_delex_features, \
+                                                              use_softmax=True,
+                                                              value_specific_decoder=self.value_specific_decoder,
+                                                              learn_belief_state_update=self.learn_belief_state_update,
+                                                              use_elmo=self.use_elmo, single_turn=self.single_turn)
+
         self.dialogue_ontology = dialogue_ontology
-        
+
         self.model_type = model_type
         self.dataset_name = dataset_name
-        
+
         self.exp_name = exp_name
         self.word_vectors = word_vectors
 
     def track_utterance(self, current_utterance, req_slot="", conf_slot="", conf_value="", past_belief_state=None):
         """
         Returns a dictionary with predictions for values in the current ontology.
-        """ 
+        """
         utterance = current_utterance.decode("utf-8")
         utterance = unicode(utterance.lower())
-        utterance = utterance.replace(u".", u" ")  
-        utterance = utterance.replace(u",", u" ")  
-        utterance = utterance.replace(u"?", u" ")  
+        utterance = utterance.replace(u".", u" ")
+        utterance = utterance.replace(u",", u" ")
+        utterance = utterance.replace(u"?", u" ")
         utterance = utterance.replace(u"-", u" ")
-        utterance = utterance.strip()  
+        utterance = utterance.strip()
 
         if past_belief_state is None:
             past_belief_state = {"food": "none", "area": "none", "price range": "none"}
-
 
         utterance = [((utterance, [(utterance, 1.0)]), [req_slot], [conf_slot], [conf_value], past_belief_state)]
 
@@ -1899,8 +1927,8 @@ class NeuralBeliefTracker:
         for slot in self.dialogue_ontology:
 
             try:
-                path_to_load = "./models/{}/".format(self.eval_model) + self.model_type + "_en_False_" + \
-                    str(self.dataset_name) + "_" + str(slot)+ "_" + str(self.exp_name) + "_1.0.ckpt"
+                path_to_load = "../../baby-jarvis/models/{}/".format(self.eval_model) + self.model_type + "_en_False_" + \
+                               str(self.dataset_name) + "_" + str(slot) + "_" + str(self.exp_name) + "_1.0.ckpt"
 
                 saver.restore(sess, path_to_load)
 
@@ -1908,84 +1936,94 @@ class NeuralBeliefTracker:
                 print "Can't restore for slot", slot, " - from file:", path_to_load
                 return
 
-            belief_state = sliding_window_over_utterance(sess, utterance, self.word_vectors, self.dialogue_ontology, self.model_variables, slot)
+            belief_state = sliding_window_over_utterance(sess, utterance, self.word_vectors, self.dialogue_ontology,
+                                                         self.model_variables, slot)
             belief_states[slot] = belief_state
 
-            # Nikola - red flag, this print could be important. 
+            # Nikola - red flag, this print could be important.
             predicted_values = return_slot_predictions(belief_state, self.dialogue_ontology[slot], slot, 0.5)
             prediction_dict[slot] = predicted_values
 
-            current_bs[slot] = print_belief_state_woz_informable(self.dialogue_ontology[slot], belief_state, threshold=0.0) # swap to 0.001 Nikola
+            current_bs[slot] = print_belief_state_woz_informable(self.dialogue_ontology[slot], belief_state,
+                                                                 threshold=0.0)  # swap to 0.001 Nikola
 
         return prediction_dict, current_bs
-
 
     def train(self):
         """
         FUTURE: Train the NBT model with new dataset.
         """
-        for slot in sorted(self.dialogue_ontology.keys()):
+        for slot in sorted(self.dialogue_ontology.keys())[3:]:
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
-            train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
-                    word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_name=self.train_model, batch_size=self.batch_size, single_turn=self.single_turn)
-            print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
+            train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN",
+                      dataset_name=self.dataset_name, \
+                      word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology,
+                      model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
+                      max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_name=self.train_model,
+                      batch_size=self.batch_size, single_turn=self.single_turn)
+            print "\n============== Training this model took", round(time.time() - stime,
+                                                                     1), "seconds. ==================="
 
 
-    def test_woz(self):
+def test_woz(self):
+    override_en_ontology = False
+    percentage = 1.0
 
-        override_en_ontology = False
-        percentage = 1.0
+    woz_dialogues, _ = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_validate_" + (
+        "single_turn_" if self.single_turn else "") + self.language_suffix + ".json", self.language,
+                                     override_en_ontology=False)
 
-        woz_dialogues, training_turns = load_woz_data("data/" + self.dataset_name + "/" + self.dataset_name + "_validate_" + ("single_turn_" if self.single_turn else "") + self.language_suffix + ".json", self.language, override_en_ontology=False)
-        
-        sessions = {}
-        saver = tf.train.Saver()
+    sessions = {}
+    saver = tf.train.Saver()
 
-        print "WOZ evaluation using language:", self.language, self.language_suffix
+    print "WOZ evaluation using language:", self.language, self.language_suffix
 
-        sessions = {}
-        saver = tf.train.Saver()
+    sessions = {}
+    saver = tf.train.Saver()
 
-        list_of_belief_states = []
+    list_of_belief_states = []
 
-        for model_id in range(0, self.num_models):
+    for model_id in range(0, self.num_models):
 
-            if self.language == "english" or self.language == "en" or override_en_ontology:
-                slots_to_load = ["food", "price range", "area", "request"]
-            elif self.language == "italian" or self.language == "it":
-                slots_to_load = ["cibo", "prezzo", "area", "request"]
-            elif self.language == "german" or self.language == "de":
-                slots_to_load = ["essen", "preisklasse", "gegend", "request"]
+        if self.language == "english" or self.language == "en" or override_en_ontology:
+            slots_to_load = ["food", "price range", "area", "request"]
+        elif self.language == "italian" or self.language == "it":
+            slots_to_load = ["cibo", "prezzo", "area", "request"]
+        elif self.language == "german" or self.language == "de":
+            slots_to_load = ["essen", "preisklasse", "gegend", "request"]
 
+        for load_slot in slots_to_load:
+            path_to_load = "../../baby-jarvis/models/{}/".format(
+                self.eval_model) + self.model_type + "_" + self.language_suffix + "_" + str(
+                override_en_ontology) + "_" + \
+                           self.dataset_name + "_" + str(load_slot) + "_" + str(self.exp_name) + "_" + str(
+                percentage) + ".ckpt"
 
-            for load_slot in slots_to_load:
+            print "----------- Loading Model", path_to_load, " ----------------"
 
-                path_to_load = "./models/{}/".format(self.eval_model) + self.model_type + "_" + self.language_suffix + "_" + str(override_en_ontology) + "_" + \
-                                       self.dataset_name + "_" + str(load_slot)+ "_" + str(self.exp_name) + "_" + str(percentage) + ".ckpt"
+            sessions[load_slot] = tf.Session()
+            saver.restore(sessions[load_slot], path_to_load)
 
-                print "----------- Loading Model", path_to_load, " ----------------"
+        evaluated_dialogues, belief_states = track_woz_data(woz_dialogues, self.model_variables, self.word_vectors,
+                                                            self.dialogue_ontology, sessions)
+        list_of_belief_states.append(belief_states)  # only useful for interpolating.
 
-                sessions[load_slot] = tf.Session()
-                saver.restore(sessions[load_slot], path_to_load)
+    results, failure_cases = evaluate_woz(evaluated_dialogues, self.dialogue_ontology)
 
-            evaluated_dialogues, belief_states = track_woz_data(woz_dialogues, self.model_variables, self.word_vectors, self.dialogue_ontology, sessions)
-            list_of_belief_states.append(belief_states) # only useful for interpolating. 
+    json.dump(failure_cases, open("../../baby-jarvis/results/failure_cases_{}.json".format(self.eval_model), "w"),
+              indent=4)
+    json.dump(evaluated_dialogues, open("../../baby-jarvis/results/woz_tracking_{}.json".format(self.eval_model), "w"),
+              indent=4)
 
-        results = evaluate_woz(evaluated_dialogues, self.dialogue_ontology)
-
-        json.dump(evaluated_dialogues, open("results/woz_tracking.json", "w"), indent=4)                
-        
-        print json.dumps(results, indent=4)
+    print json.dumps(results, indent=4)
 
 
 def main():
-
-    try: 
+    try:
         config_filepath = sys.argv[2]
     except:
-        print "Config not specified."  
+        print "Config not specified."
         return
 
     NBT = NeuralBeliefTracker(config_filepath)
@@ -1993,14 +2031,14 @@ def main():
     do_training = False
     do_woz = False
 
-    try: 
+    try:
         switch = sys.argv[1]
         if switch == "train":
             do_training = True
         elif switch == "woz":
             do_woz = True
     except:
-        print "Training/Testing not specified, defaulting to input testing."  
+        print "Training/Testing not specified, defaulting to input testing."
 
     if do_training:
         NBT.train()
@@ -2014,14 +2052,14 @@ def main():
             req_slot = raw_input("Enter system requrement slot:")
             conf_slot = raw_input("Enter system confirm slot:")
             conf_value = raw_input("Enter system confirm value:")
-            
+
             if req_slot not in NBT.dialogue_ontology:
                 print req_slot, "---", NBT.dialogue_ontology.keys()
                 req_slot = ""
             else:
                 req_slot = req_slot
 
-            if  conf_slot not in NBT.dialogue_ontology:
+            if conf_slot not in NBT.dialogue_ontology:
                 conf_slot = ""
                 conf_value = ""
             elif conf_value not in NBT.dialogue_ontology[conf_slot]:
@@ -2036,10 +2074,11 @@ def main():
             if "reset" in utterance:
                 previous_belief_state = None
             else:
-                predictions, previous_belief_state = NBT.track_utterance(utterance, req_slot=req_slot, conf_slot=conf_slot, conf_value=conf_value, past_belief_state=previous_belief_state)
+                predictions, previous_belief_state = NBT.track_utterance(utterance, req_slot=req_slot,
+                                                                         conf_slot=conf_slot, conf_value=conf_value,
+                                                                         past_belief_state=previous_belief_state)
                 print json.dumps(predictions, indent=4)
 
 
 if __name__ == "__main__":
     main()
-

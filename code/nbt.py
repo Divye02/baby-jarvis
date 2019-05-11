@@ -1037,7 +1037,9 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
 
 
 def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, target_slot, utterances, dialogue_ontology, \
-                   positive_examples, negative_examples, print_mode=False, epoch_id=0):
+                        positive_examples, negative_examples, print_mode=False, epoch_id=0):
+
+
     start_time = time.time()
 
     merged, keep_prob, x_full, x_delex, \
@@ -1064,18 +1066,24 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
     total_accuracy = 0.0
     element_count = 0
 
-    total_num_FP = 0.0  # FP
-    total_num_TP = 0.0  # TP
-    total_num_FN = 0.0  # FN -> prec = TP / (TP + FP), recall = TP / (TP + FN)
+    total_num_FP = 0.0 # FP
+    total_num_TP = 0.0 # TP
+    total_num_FN = 0.0 # FN -> prec = TP / (TP + FP), recall = TP / (TP + FN)
     total_num_TN = 0.0
+
+    total_positive = 0
+    total_positive_correct = 0
+    total_negative = 0
+    total_negative_correct = 0
 
     for idx in range(0, batch_count):
 
         left_range = idx * batch_size
-        right_range = min((idx + 1) * batch_size, example_count)
-        curr_len = right_range - left_range  # in the last batch, could be smaller than batch size
+        right_range = min((idx+1) * batch_size, example_count)
+        curr_len = right_range - left_range # in the last batch, could be smaller than batch size
 
         if idx in [batch_count - 1, 0]:
+
             xss_full = numpy.zeros((batch_size, longest_utterance_length, word_vector_size), dtype="float32")
             xss_sys_req = numpy.zeros((batch_size, word_vector_size), dtype="float32")
             xss_conf_slots = numpy.zeros((batch_size, word_vector_size), dtype="float32")
@@ -1084,10 +1092,10 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
             xss_labels = numpy.zeros((batch_size, label_size), dtype="float32")
             xss_prev_labels = numpy.zeros((batch_size, label_size), dtype="float32")
 
-            uss_full = numpy.zeros((batch_size,), dtype=object)
-            uss_sys_req = numpy.zeros((batch_size,), dtype=object)
-            uss_sys_conf_slots = numpy.zeros((batch_size,), dtype=object)
-            uss_sys_conf_values = numpy.zeros((batch_size,), dtype=object)
+            uss_full = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_req = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_conf_slots = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_conf_values = numpy.zeros((batch_size, ), dtype=object)
 
         xss_full[0:curr_len, :, :] = xs_full[left_range:right_range, :, :]
         xss_sys_req[0:curr_len, :] = xs_sys_req[left_range:right_range, :]
@@ -1097,37 +1105,51 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
         xss_labels[0:curr_len, :] = xs_labels[left_range:right_range, :]
         xss_prev_labels[0:curr_len, :] = xs_prev_labels[left_range:right_range, :]
 
-        uss_full[0:curr_len, ] = us_full[left_range:right_range, ]
+        uss_full[0:curr_len, ] = us_full[left_range:right_range,]
         uss_full[curr_len:, ] = ''
-        uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range, ]
+        uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range,]
         uss_sys_req[curr_len:, ] = ''
-        uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range, ]
+        uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range,]
         uss_sys_conf_slots[curr_len:, ] = ''
-        uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range, ]
+        uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range,]
         uss_sys_conf_values[curr_len:, ] = ''
-        # ==============================================================================================
-        [summary, current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run(
-            [merged, predictions, y, accuracy, update_coefficient],
-            feed_dict={x_full: xss_full, x_delex: xss_delex, \
-                       requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
-                       system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels,
-                       keep_prob: 1.0,
-                       u_full: numpy.array([('hello ' * 40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
-                       u_system_act_confirm_slots: uss_sys_conf_slots,
-                       u_system_act_confirm_values: uss_sys_conf_values})
-        valid_writer.add_summary(summary, example_count * (epoch_id - 1) + idx)
-        #       below lines print predictions for small batches to see what is being predicted
-        #        if idx == 0 or idx == batch_count - 2:
-        #            #print current_y.shape, xss_labels.shape, xs_labels.shape
-        #            print "\n\n", numpy.argmax(current_y, axis=1), "\n", numpy.argmax(xss_labels, axis=1), "\n==============================\n\n"
+    # ==============================================================================================
+        [summary, current_predictions, current_true_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run([merged, predictions, true_predictions, y, accuracy, update_coefficient],
+                         feed_dict={x_full: xss_full, x_delex: xss_delex, \
+                                    requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
+                                    system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels, keep_prob: 1.0,
+                                    u_full: numpy.array([('hello '*40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
+                                    u_system_act_confirm_slots: uss_sys_conf_slots,
+                                    u_system_act_confirm_values: uss_sys_conf_values})
+        valid_writer.add_summary(summary, example_count*(epoch_id - 1)+ idx)
+#       below lines print predictions for small batches to see what is being predicted
+#        if idx == 0 or idx == batch_count - 2:
+#            #print current_y.shape, xss_labels.shape, xs_labels.shape
+#            print "\n\n", numpy.argmax(current_y, axis=1), "\n", numpy.argmax(xss_labels, axis=1), "\n==============================\n\n"
 
         total_accuracy += current_accuracy
         element_count += 1
 
+        for index, true_value in enumerate(current_true_predictions):
+            # If the true value is the last label, that means that it is a negative example
+            # (There is no belief state for the current slot)
+            if (true_value == (label_size - 1)):
+                total_negative += 1
+                if (current_predictions[index] == true_value):
+                    total_negative_correct += 1
+            else:
+                total_positive += 1
+                if (current_predictions[index] == true_value):
+                    total_positive_correct += 1
+    
     eval_accuracy = round(total_accuracy / element_count, 3)
+    positive_accuracy = round(((total_positive_correct) * 1.0) / total_positive, 3)
+    negative_accuracy = round(((total_negative_correct) * 1.0) / total_negative, 3)
+    # A similar accuracy to the training data accuracy (which is trained on an EVEN split of positive and negative data)
+    even_split_accuracy = round((positive_accuracy + negative_accuracy) / 2, 3)
 
     if print_mode:
-        print "Epoch", epoch_id, " Example count: ", example_count, "[Accuracy] = ", eval_accuracy, " ----- update coeff:", update_coefficient_load  # , round(end_time - start_time, 1), "seconds. ---"
+        print "Epoch", epoch_id, ": Example count: ", example_count, "[Validation Total Accuracy] = ", eval_accuracy, " [Positive Accuracy] = ", positive_accuracy, " [Negative Accuracy] = ", negative_accuracy, "['Averaged' Accuracy (Positive & Negative)] = ", even_split_accuracy, " ----- update coeff:", update_coefficient_load # , round(end_time - start_time, 1), "seconds. ---"
 
     return eval_accuracy
 

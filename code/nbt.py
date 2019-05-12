@@ -1735,6 +1735,7 @@ class NeuralBeliefTracker:
         self.max_epoch = int(config.get("train", "max_epoch"))
         self.batch_size = int(config.get("train", "batch_size"))
         self.use_elmo = config.get("model", "use_elmo") in ["True", "true"]
+        self.use_rnn = config.get("model", "use_rnn") in ["True", "true"]
         self.train_model = config.get("train", "train_model")
         self.eval_model = config.get("test", "eval_model")
 
@@ -1872,7 +1873,8 @@ class NeuralBeliefTracker:
                                                               use_softmax=False,
                                                               value_specific_decoder=self.value_specific_decoder,
                                                               learn_belief_state_update=self.learn_belief_state_update,
-                                                              use_elmo=self.use_elmo, single_turn=self.single_turn)
+                                                              use_elmo=self.use_elmo, single_turn=self.single_turn,
+                                                              use_rnn=self.use_rnn, id='_'.join(slot.split()))
             else:
 
                 slot_vectors = numpy.zeros((len(dialogue_ontology[slot]) + 1, 300), dtype="float32")  # +1 for None
@@ -1888,7 +1890,8 @@ class NeuralBeliefTracker:
                                                               use_softmax=True,
                                                               value_specific_decoder=self.value_specific_decoder,
                                                               learn_belief_state_update=self.learn_belief_state_update,
-                                                              use_elmo=self.use_elmo, single_turn=self.single_turn)
+                                                              use_elmo=self.use_elmo, single_turn=self.single_turn,
+                                                              use_rnn=self.use_rnn, id='_'.join(slot.split()))
 
         self.dialogue_ontology = dialogue_ontology
 
@@ -1953,7 +1956,7 @@ class NeuralBeliefTracker:
         """
         FUTURE: Train the NBT model with new dataset.
         """
-        for slot in sorted(self.dialogue_ontology.keys())[3:]:
+        for slot in sorted(self.dialogue_ontology.keys()):
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN",

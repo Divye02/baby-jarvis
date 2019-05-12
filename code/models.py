@@ -36,8 +36,23 @@ def define_CNN_model(utterance_representations_full, num_filters=300, vector_dim
 
     return hidden_representation
 
+def define_RNN_model(utterance_representations_full, hidden_units=300, vector_dimension=300, longest_utterance_length=40):
+    """
+    Better code for defining the RNN model.
+    """
+    num_layers = 1
+    # hidden_representation = tf.zeros([num_filters], tf.float32)
 
-def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, use_elmo=True, single_turn=False):
+    lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_units,
+                                        state_is_tuple=True)  # can use tf.nn.rnn_cell.GRUCell or tf.nn.rnn_cell.BasicRNNCell instead
+    cells = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_layers, state_is_tuple=True)
+    # init_state = cells.zero_state(batch_size, tf.float32)
+    rnn_outputs, final_state = tf.nn.dynamic_rnn(cells, utterance_representations_full, dtype=tf.float32)
+
+    return final_state[0][0]
+
+
+def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, use_elmo=True, single_turn=False, use_rnn=False, id=''):
     """
     This method defines the model and returns the required TensorFlow operations.
 
@@ -80,6 +95,7 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     utterance_representations_full = tf.placeholder(tf.float32, [None, 40, vector_dimension]) # full feature vector, which we want to convolve over. 
     utterance_representations_delex = tf.placeholder(tf.float32, [None, label_size])
 #    utterance_representations_delex = tf.placeholder(tf.float32, [None, label_size, 40, vector_dimension])
+    utterance_lengths = tf.placeholder(tf.float32, [None,])
 
     system_act_slots = tf.placeholder(tf.float32, shape=(None, vector_dimension))   # just slots, for requestables. 
 
@@ -141,7 +157,13 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
 
     # filter needs to be of shape: filter_height = 1,2,3, filter_width=300, in_channel=1, out_channel=num_filters
     # filter just dot products - in images these then overlap from different regions - we don't have that.
-    h_utterance_representation = define_CNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, num_filters, vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
+    if use_rnn:
+        with tf.variable_scope(id):
+            h_utterance_representation = define_RNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, num_filters, vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
+    else:
+        h_utterance_representation = define_CNN_model(
+            embedding_tensor_full if use_elmo else utterance_representations_full, num_filters,
+            vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
     # print(h_utterance_representation.shape)
     #candidate_sum = W_slots + W_values # size [label_size, vector_dimension]
 

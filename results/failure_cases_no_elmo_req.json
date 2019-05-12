@@ -1,0 +1,1369 @@
+{
+    "fp": [
+        [
+            "User: is it cheap   ASR: [(u'is it cheap', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [
+                        "price range"
+                    ], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: all right thanks   ASR: [(u'all right thanks', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: youre welcome   ASR: [(u'youre welcome', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ]
+    ], 
+    "fn": [
+        [
+            "User: i dont care    System Request: [u'area']   ASR: [(u'i dont care', 1.0)]", 
+            {
+                "True State": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: please give me their number too   ASR: [(u'please give me their number too', 1.0)]", 
+            {
+                "True State": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: what type of food do they serve     System Confirm: ['request'] [u'address']   ASR: [(u'what type of food do they serve ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [
+                        "food"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: no thank you goodbye    ASR: [(u'no thank you goodbye ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "chinese", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: i dont care    System Request: [u'area']   ASR: [(u'i dont care', 1.0)]", 
+            {
+                "True State": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: i really have no desire for cote are there other restaurants available    ASR: [(u'i really have no desire for cote are there other restaurants available ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: ok i will try this one i would like the address and phone number please    ASR: [(u'ok i will try this one i would like the address and phone number please ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: no thank you    ASR: [(u'no thank you ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "french", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: i dont care    System Request: [u'area']   ASR: [(u'i dont care', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: indian food    System Confirm: ['request', 'request'] [u'address', u'phone']   ASR: [(u'indian food', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: may i have the phone number   ASR: [(u'may i have the phone number', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: no thank you    ASR: [(u'no thank you ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: dont care    System Request: [u'area']   ASR: [(u'dont care', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: that should be all thank you    ASR: [(u'that should be all thank you ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "french", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: i dont care about the area of town but id like cuban food    System Request: [u'area']   ASR: [(u'i dont care about the area of town but id like cuban food', 1.0)]", 
+            {
+                "True State": {
+                    "food": "cuban", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "cuban", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: i dont care about the area of town but id like cuban food    System Request: [u'area']   ASR: [(u'i dont care about the area of town but id like cuban food', 1.0)]", 
+            {
+                "True State": {
+                    "food": "cuban", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "cuban", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: are there any international restaurants in the moderate range   ASR: [(u'are there any international restaurants in the moderate range', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: can i get the address and postcode please   ASR: [(u'can i get the address and postcode please', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "postcode"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "postcode"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: thank you good bye   ASR: [(u'thank you good bye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: sure may i have the address and number   ASR: [(u'sure may i have the address and number', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: may i please have the address and the phone number   ASR: [(u'may i please have the address and the phone number', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: nope thats it thank you bye   ASR: [(u'nope thats it thank you bye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: it doesnt matter whichever you recommend     System Request: [u'price range']   ASR: [(u'it doesnt matter whichever you recommend ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: it doesnt matter whichever you recommend     System Request: [u'price range']   ASR: [(u'it doesnt matter whichever you recommend ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: yes  and the phone number please    System Confirm: ['request'] [u'address']   ASR: [(u'yes  and the phone number please', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "phone", 
+                        "address"
+                    ], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: yes  and the phone number please    System Confirm: ['request'] [u'address']   ASR: [(u'yes  and the phone number please', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "phone", 
+                        "address"
+                    ], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: still waiting    System Confirm: ['request', 'request'] [u'address', u'phone']   ASR: [(u'still waiting', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "phone", 
+                        "address"
+                    ], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: still waiting    System Confirm: ['request', 'request'] [u'address', u'phone']   ASR: [(u'still waiting', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "phone", 
+                        "address"
+                    ], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: thank you goodbye   ASR: [(u'thank you goodbye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: thank you goodbye   ASR: [(u'thank you goodbye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "british", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "centre"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "dontcare", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: goodbye   ASR: [(u'goodbye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: id prefer the west side    System Request: [u'area']   ASR: [(u'id prefer the west side', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: yes can i have the phone number and address    ASR: [(u'yes can i have the phone number and address ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "none", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: is it cheap   ASR: [(u'is it cheap', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [
+                        "price range"
+                    ], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: all right thanks   ASR: [(u'all right thanks', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: youre welcome   ASR: [(u'youre welcome', 1.0)]", 
+            {
+                "True State": {
+                    "food": "thai", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "indian", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: i need to find polish restaurants in town and i would like their numbers  or maybe modern european food would work   ASR: [(u'i need to find polish restaurants in town and i would like their numbers  or maybe modern european food would work', 1.0)]", 
+            {
+                "True State": {
+                    "food": "polish", 
+                    "price range": "none", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "none", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: give me the phone number for any moderately priced options    System Request: [u'price range']   ASR: [(u'give me the phone number for any moderately priced options', 1.0)]", 
+            {
+                "True State": {
+                    "food": "modern european", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: thank you goodbye    ASR: [(u'thank you goodbye ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "modern european", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: my wife thinks she likes international but i dont want to take out a loan   ASR: [(u'my wife thinks she likes international but i dont want to take out a loan', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "international", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: i need something cheaper than that place do you have the phone number for a cheaper place   ASR: [(u'i need something cheaper than that place do you have the phone number for a cheaper place', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "cheap", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "cheap", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: thank you goodbye   ASR: [(u'thank you goodbye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: looking for a jamaican restaurant on the west side  if not lets try italian   ASR: [(u'looking for a jamaican restaurant on the west side  if not lets try italian', 1.0)]", 
+            {
+                "True State": {
+                    "food": "jamaican", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: ok can i have the number for prezzo    System Confirm: [u'food'] [u'italian']   ASR: [(u'ok can i have the number for prezzo', 1.0)]", 
+            {
+                "True State": {
+                    "food": "italian", 
+                    "price range": "none", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "none", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: thank you very much for your help that is all for now   ASR: [(u'thank you very much for your help that is all for now', 1.0)]", 
+            {
+                "True State": {
+                    "food": "italian", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "west"
+                }
+            }
+        ], 
+        [
+            "User: okay great thanks and have a good day   ASR: [(u'okay great thanks and have a good day', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "north"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "european", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "north"
+                }
+            }
+        ], 
+        [
+            "User: on the east side of town please    System Request: [u'area']   ASR: [(u'on the east side of town please', 1.0)]", 
+            {
+                "True State": {
+                    "food": "dontcare", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: great what is the phone number    ASR: [(u'great what is the phone number ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "dontcare", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: thank you goodbye   ASR: [(u'thank you goodbye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "dontcare", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: how about the south part of town    System Request: [u'area']   ASR: [(u'how about the south part of town', 1.0)]", 
+            {
+                "True State": {
+                    "food": "vietnamese", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "south"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "none", 
+                    "request": [], 
+                    "area": "south"
+                }
+            }
+        ], 
+        [
+            "User: can i have the address and phone number to the curry prince please   ASR: [(u'can i have the address and phone number to the curry prince please', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: can i have the address and phone number to the curry prince please   ASR: [(u'can i have the address and phone number to the curry prince please', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "dontcare", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: no thank you   ASR: [(u'no thank you', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: no thank you   ASR: [(u'no thank you', 1.0)]", 
+            {
+                "True State": {
+                    "food": "indian", 
+                    "price range": "dontcare", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "moderate", 
+                    "request": [], 
+                    "area": "east"
+                }
+            }
+        ], 
+        [
+            "User: i dont care where it is    System Request: [u'area']   ASR: [(u'i dont care where it is', 1.0)]", 
+            {
+                "True State": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: what is the price range    ASR: [(u'what is the price range ', 1.0)]", 
+            {
+                "True State": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [
+                        "price range"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: what is the address phone number and area   ASR: [(u'what is the address phone number and area', 1.0)]", 
+            {
+                "True State": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [
+                        "phone", 
+                        "area", 
+                        "address"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [
+                        "address", 
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: thatll do thank you good bye   ASR: [(u'thatll do thank you good bye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: thank you good bye   ASR: [(u'thank you good bye', 1.0)]", 
+            {
+                "True State": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "european", 
+                    "price range": "expensive", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: hello im looking for a cheap restaurant that serves all types of food   ASR: [(u'hello im looking for a cheap restaurant that serves all types of food', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: yes definitely  what is their number   ASR: [(u'yes definitely  what is their number', 1.0)]", 
+            {
+                "True State": {
+                    "food": "international", 
+                    "price range": "cheap", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "cheap", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "none"
+                }
+            }
+        ], 
+        [
+            "User: i would like a cheap restaurant in any area that serves world food but if there isnt one available then vietnamese food would be fine and i just need their phone number    System Confirm: ['request'] [u'address']   ASR: [(u'i would like a cheap restaurant in any area that serves world food but if there isnt one available then vietnamese food would be fine and i just need their phone number', 1.0)]", 
+            {
+                "True State": {
+                    "food": "world", 
+                    "price range": "cheap", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "vietnamese", 
+                    "price range": "cheap", 
+                    "request": [
+                        "phone"
+                    ], 
+                    "area": "dontcare"
+                }
+            }
+        ], 
+        [
+            "User: nope im calling the restaurant now bye and thanks for your help   ASR: [(u'nope im calling the restaurant now bye and thanks for your help', 1.0)]", 
+            {
+                "True State": {
+                    "food": "vietnamese", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }, 
+            {
+                "Prediction": {
+                    "food": "none", 
+                    "price range": "cheap", 
+                    "request": [], 
+                    "area": "dontcare"
+                }
+            }
+        ]
+    ]
+}

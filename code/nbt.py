@@ -1037,7 +1037,9 @@ def generate_examples(target_slot, feature_vectors, word_vectors, dialogue_ontol
 
 
 def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, target_slot, utterances, dialogue_ontology, \
-                   positive_examples, negative_examples, print_mode=False, epoch_id=0):
+                        positive_examples, negative_examples, print_mode=False, epoch_id=0):
+
+
     start_time = time.time()
 
     merged, keep_prob, x_full, x_delex, \
@@ -1064,18 +1066,24 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
     total_accuracy = 0.0
     element_count = 0
 
-    total_num_FP = 0.0  # FP
-    total_num_TP = 0.0  # TP
-    total_num_FN = 0.0  # FN -> prec = TP / (TP + FP), recall = TP / (TP + FN)
+    total_num_FP = 0.0 # FP
+    total_num_TP = 0.0 # TP
+    total_num_FN = 0.0 # FN -> prec = TP / (TP + FP), recall = TP / (TP + FN)
     total_num_TN = 0.0
+
+    total_positive = 0
+    total_positive_correct = 0
+    total_negative = 0
+    total_negative_correct = 0
 
     for idx in range(0, batch_count):
 
         left_range = idx * batch_size
-        right_range = min((idx + 1) * batch_size, example_count)
-        curr_len = right_range - left_range  # in the last batch, could be smaller than batch size
+        right_range = min((idx+1) * batch_size, example_count)
+        curr_len = right_range - left_range # in the last batch, could be smaller than batch size
 
         if idx in [batch_count - 1, 0]:
+
             xss_full = numpy.zeros((batch_size, longest_utterance_length, word_vector_size), dtype="float32")
             xss_sys_req = numpy.zeros((batch_size, word_vector_size), dtype="float32")
             xss_conf_slots = numpy.zeros((batch_size, word_vector_size), dtype="float32")
@@ -1084,10 +1092,10 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
             xss_labels = numpy.zeros((batch_size, label_size), dtype="float32")
             xss_prev_labels = numpy.zeros((batch_size, label_size), dtype="float32")
 
-            uss_full = numpy.zeros((batch_size,), dtype=object)
-            uss_sys_req = numpy.zeros((batch_size,), dtype=object)
-            uss_sys_conf_slots = numpy.zeros((batch_size,), dtype=object)
-            uss_sys_conf_values = numpy.zeros((batch_size,), dtype=object)
+            uss_full = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_req = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_conf_slots = numpy.zeros((batch_size, ), dtype=object)
+            uss_sys_conf_values = numpy.zeros((batch_size, ), dtype=object)
 
         xss_full[0:curr_len, :, :] = xs_full[left_range:right_range, :, :]
         xss_sys_req[0:curr_len, :] = xs_sys_req[left_range:right_range, :]
@@ -1097,37 +1105,51 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
         xss_labels[0:curr_len, :] = xs_labels[left_range:right_range, :]
         xss_prev_labels[0:curr_len, :] = xs_prev_labels[left_range:right_range, :]
 
-        uss_full[0:curr_len, ] = us_full[left_range:right_range, ]
+        uss_full[0:curr_len, ] = us_full[left_range:right_range,]
         uss_full[curr_len:, ] = ''
-        uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range, ]
+        uss_sys_req[0:curr_len, ] = us_sys_req[left_range:right_range,]
         uss_sys_req[curr_len:, ] = ''
-        uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range, ]
+        uss_sys_conf_slots[0:curr_len, ] = us_sys_conf_slots[left_range:right_range,]
         uss_sys_conf_slots[curr_len:, ] = ''
-        uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range, ]
+        uss_sys_conf_values[0:curr_len, ] = us_sys_conf_values[left_range:right_range,]
         uss_sys_conf_values[curr_len:, ] = ''
-        # ==============================================================================================
-        [summary, current_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run(
-            [merged, predictions, y, accuracy, update_coefficient],
-            feed_dict={x_full: xss_full, x_delex: xss_delex, \
-                       requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
-                       system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels,
-                       keep_prob: 1.0,
-                       u_full: numpy.array([('hello ' * 40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
-                       u_system_act_confirm_slots: uss_sys_conf_slots,
-                       u_system_act_confirm_values: uss_sys_conf_values})
-        valid_writer.add_summary(summary, example_count * (epoch_id - 1) + idx)
-        #       below lines print predictions for small batches to see what is being predicted
-        #        if idx == 0 or idx == batch_count - 2:
-        #            #print current_y.shape, xss_labels.shape, xs_labels.shape
-        #            print "\n\n", numpy.argmax(current_y, axis=1), "\n", numpy.argmax(xss_labels, axis=1), "\n==============================\n\n"
+    # ==============================================================================================
+        [summary, current_predictions, current_true_predictions, current_y, current_accuracy, update_coefficient_load] = sess.run([merged, predictions, true_predictions, y, accuracy, update_coefficient],
+                         feed_dict={x_full: xss_full, x_delex: xss_delex, \
+                                    requested_slots: xss_sys_req, system_act_confirm_slots: xss_conf_slots, \
+                                    system_act_confirm_values: xss_conf_values, y_: xss_labels, y_past_state: xss_prev_labels, keep_prob: 1.0,
+                                    u_full: numpy.array([('hello '*40)[:-1]] + list(uss_full)), u_requested_slots: uss_sys_req,
+                                    u_system_act_confirm_slots: uss_sys_conf_slots,
+                                    u_system_act_confirm_values: uss_sys_conf_values})
+        valid_writer.add_summary(summary, example_count*(epoch_id - 1)+ idx)
+#       below lines print predictions for small batches to see what is being predicted
+#        if idx == 0 or idx == batch_count - 2:
+#            #print current_y.shape, xss_labels.shape, xs_labels.shape
+#            print "\n\n", numpy.argmax(current_y, axis=1), "\n", numpy.argmax(xss_labels, axis=1), "\n==============================\n\n"
 
         total_accuracy += current_accuracy
         element_count += 1
 
+        for index, true_value in enumerate(current_true_predictions):
+            # If the true value is the last label, that means that it is a negative example
+            # (There is no belief state for the current slot)
+            if (true_value == (label_size - 1)):
+                total_negative += 1
+                if (current_predictions[index] == true_value):
+                    total_negative_correct += 1
+            else:
+                total_positive += 1
+                if (current_predictions[index] == true_value):
+                    total_positive_correct += 1
+    
     eval_accuracy = round(total_accuracy / element_count, 3)
+    positive_accuracy = round(((total_positive_correct) * 1.0) / total_positive, 3)
+    negative_accuracy = round(((total_negative_correct) * 1.0) / total_negative, 3)
+    # A similar accuracy to the training data accuracy (which is trained on an EVEN split of positive and negative data)
+    even_split_accuracy = round((positive_accuracy + negative_accuracy) / 2, 3)
 
     if print_mode:
-        print "Epoch", epoch_id, " Example count: ", example_count, "[Accuracy] = ", eval_accuracy, " ----- update coeff:", update_coefficient_load  # , round(end_time - start_time, 1), "seconds. ---"
+        print "Epoch", epoch_id, ": Example count: ", example_count, "[Validation Total Accuracy] = ", eval_accuracy, " [Positive Accuracy] = ", positive_accuracy, " [Negative Accuracy] = ", negative_accuracy, "['Averaged' Accuracy (Positive & Negative)] = ", even_split_accuracy, " ----- update coeff:", update_coefficient_load # , round(end_time - start_time, 1), "seconds. ---"
 
     return eval_accuracy
 
@@ -1339,7 +1361,7 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
 
 def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name,
               dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096,
-              model_name='models', batch_size=256, single_turn=False):
+              model_base_dir='./models/model_default', model_name='model_default', batch_size=256, single_turn=False):
     """
     This method trains a model on the data and saves the file parameters to a file which can
     then be loaded to do evaluation.
@@ -1389,22 +1411,16 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         return
 
     # will be used to save model parameters with best validation scores.
-    saver = tf.train.Saver()
+    saver = tf.train.Saver(max_to_keep=1)
+    best_model_saver = tf.train.Saver(max_to_keep=1)
 
     init = tf.global_variables_initializer()
     sess = tf.Session()
-    train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)
-    valid_writer = tf.summary.FileWriter('./logs/{}/{}/valid '.format(model_name, target_slot), sess.graph)
-    # sess = tf_debug.TensorBoardDebugWrapperSession(sess, 'localhost:6064')
-    sess.run(init)
 
-    print_mode = False
-    # Model training:
 
     best_f_score = -0.01
 
     print "\nDoing", batches_per_epoch, "randomly drawn batches of size", batch_size, "for", max_epoch, "training epochs.\n"
-    start_time = time.time()
 
     ratio = {}
 
@@ -1414,12 +1430,38 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     epoch = 0
     last_update = -1
-    counter = 0
+    counter=0
+
+    # try restoring models
+    slot_model_path = os.path.join(model_base_dir, target_slot)
+    model_checkpoints = [f for f in os.listdir(slot_model_path) if
+                         os.path.isfile(os.path.join(slot_model_path, f)) and f.endswith('meta')]
+    if len(model_checkpoints) != 0:
+        latest_checkpoint_file = tf.train.latest_checkpoint(slot_model_path)
+        print "Loading the last checkpoint: {}".format(latest_checkpoint_file)
+
+        saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
+        saver.restore(sess, latest_checkpoint_file)
+
+        best_model_saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
+        best_model_saver.restore(sess, latest_checkpoint_file)
+
+        epoch = int(latest_checkpoint_file.split('-')[-1])
+        counter = epoch * batches_per_epoch
+
+    else:
+        print "Running new train for model {}".format(slot_model_path)
+        sess.run(init)
+
+    train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)
+    valid_writer = tf.summary.FileWriter('./logs/{}/{}/valid '.format(model_name, target_slot), sess.graph)
+
+    start_time = time.time()
+
     while epoch < max_epoch:
 
         sys.stdout.flush()
 
-        epoch += 1
         current_epoch_fscore = 0.0
         current_epoch_acc = 0.0
 
@@ -1439,8 +1481,6 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             (batch_xs_full, batch_sys_req, batch_sys_conf_slots, batch_sys_conf_values,
              batch_delex, batch_ys, batch_ys_prev, batch_u_full, batch_u_sys_req, batch_u_sys_conf_slots,
              batch_u_sys_conf_values) = batch_data
-
-            # merge = tf.summary.merge_all()
 
             [summary, _, cf, cp, cr, ca] = sess.run([merged, train_step, f_score, precision, recall, accuracy],
                                                     feed_dict={x_full: batch_xs_full, \
@@ -1463,7 +1503,9 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             element_count += 1
 
         train_accuracy = round(total_accuracy / element_count, 3)
-        # print(emb.shape)
+
+        epoch += 1
+
         # ================================ VALIDATION ==============================================
         print "Epoch", epoch, " Train accuracy: ", train_accuracy
 
@@ -1491,35 +1533,21 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
             last_update = epoch
 
-            if epoch < 100:
-                if int(epoch * 1.5) > max_epoch:
-                    pass
-                    # max_epoch = int(epoch * 1.5)
-                    # print "Increasing max epoch to:", max_epoch
-            else:
-                if int(epoch * 1.2) > max_epoch:
-                    pass
-                    # max_epoch = int(epoch * 1.2)
-                    # print "Increasing max epoch to:", max_epoch
-
-            print "\n ====================== New best validation metric:", round(current_metric, 4), \
-                " - saving these parameters. Epoch is:", epoch + 1, "/", max_epoch, "---------------- ===========  \n"
+            print "\n ====================== New best validation metric:", round(current_metric, 4),  \
+                  " - saving these parameters. Epoch is:", epoch + 1, "/", max_epoch, "---------------- ===========  \n"
 
             best_f_score = current_metric
-            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" + str(
-                override_en_ontology) + "_" + \
-                           str(dataset_name) + "_" + str(target_slot) + "_" + str(exp_name) + "_" + str(
-                percentage) + ".ckpt"
+            path_to_save = "{}".format(slot_model_path) + "/" + model_type + "_" + \
+                   str(dataset_name)  + "_" + str(percentage) + "_best.ckpt"
 
-            save_path = saver.save(sess, path_to_save)
 
-        if epoch > 100:
-            path_to_save = "./models/{}/".format(model_name) + model_type + "_" + language + "_" + str(
-                override_en_ontology) + "_" + \
-                           str(dataset_name) + "_" + str(target_slot) + "_" + str(exp_name) + "_" + str(
-                percentage) + "_last_ep" + ".ckpt"
+            best_model_saver.save(sess, path_to_save, global_step=epoch)
 
-            save_path = saver.save(sess, path_to_save)
+        if epoch > 100 and (epoch % 10) == 0 :
+            path_to_save = "{}".format(slot_model_path) + "/" + model_type + "_" + \
+                   str(dataset_name)  + "_" + str(percentage) + ".ckpt"
+
+            saver.save(sess, path_to_save, global_step=epoch, write_meta_graph=False)
 
     print "The best parameters achieved a validation metric of", round(best_f_score, 4)
 
@@ -1737,6 +1765,7 @@ class NeuralBeliefTracker:
         self.use_elmo = config.get("model", "use_elmo") in ["True", "true"]
         self.use_rnn = config.get("model", "use_rnn") in ["True", "true"]
         self.train_model = config.get("train", "train_model")
+        self.model_base_dir = config.get("model", "model_base_dir").format(self.train_model_name)
         self.eval_model = config.get("test", "eval_model")
 
         if not os.path.isfile(word_vector_destination):
@@ -1747,7 +1776,7 @@ class NeuralBeliefTracker:
                 "wget -O word-vectors/prefix_paragram.txt https://www.dropbox.com/s/r35ih722bbjpn8b/prefix_paragram.txt?dl=0")
             word_vector_destination = "word-vectors/prefix_paragram.txt"
 
-        os.system("mkdir -p ./models/{}".format(self.train_model))
+        os.system("mkdir -p {}".format(self.model_base_dir))
         word_vectors = load_word_vectors(word_vector_destination, primary_language=language)
 
         word_vectors["tag-slot"] = xavier_vector("tag-slot")
@@ -1757,6 +1786,9 @@ class NeuralBeliefTracker:
         dialogue_ontology = json.load(codecs.open(ontology_filepath, "r", "utf-8"))
         dialogue_ontology = dialogue_ontology["informable"]
         slots = dialogue_ontology.keys()
+
+        for slot in slots:
+            os.system("mkdir -p {}".format(os.path.join(self.model_base_dir, slot)))
 
         word_vector_size = random.choice(word_vectors.values()).shape[0]
 
@@ -1928,11 +1960,10 @@ class NeuralBeliefTracker:
         current_bs = {}
 
         for slot in self.dialogue_ontology:
-
+            slot_model_path = os.path.join(self.model_base_dir, slot)
             try:
-                path_to_load = "./models/{}/".format(self.eval_model) + self.model_type + "_en_False_" + \
-                               str(self.dataset_name) + "_" + str(slot) + "_" + str(self.exp_name) + "_1.0.ckpt"
 
+                path_to_load = tf.train.latest_checkpoint(slot_model_path)
                 saver.restore(sess, path_to_load)
 
             except:
@@ -1959,14 +1990,10 @@ class NeuralBeliefTracker:
         for slot in sorted(self.dialogue_ontology.keys()):
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
-            train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN",
-                      dataset_name=self.dataset_name, \
-                      word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology,
-                      model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                      max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_name=self.train_model,
-                      batch_size=self.batch_size, single_turn=self.single_turn)
-            print "\n============== Training this model took", round(time.time() - stime,
-                                                                     1), "seconds. ==================="
+            train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
+                    word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
+                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn)
+            print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
 
 
     def test_woz(self):
@@ -1996,13 +2023,11 @@ class NeuralBeliefTracker:
             elif self.language == "german" or self.language == "de":
                 slots_to_load = ["essen", "preisklasse", "gegend", "request"]
 
-            for load_slot in slots_to_load:
-                path_to_load = "./models/{}/".format(
-                    self.eval_model) + self.model_type + "_" + self.language_suffix + "_" + str(
-                    override_en_ontology) + "_" + \
-                               self.dataset_name + "_" + str(load_slot) + "_" + str(self.exp_name) + "_" + str(
-                    percentage) + ".ckpt"
 
+            for load_slot in sorted(slots_to_load):
+                slot_model_path = os.path.join(self.model_base_dir, load_slot)
+
+                path_to_load = tf.train.latest_checkpoint(slot_model_path)
                 print "----------- Loading Model", path_to_load, " ----------------"
 
                 sessions[load_slot] = tf.Session()

@@ -87,7 +87,6 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     # these are actual NN hyperparameters that we might want to tune at some point:
     hidden_units_1 = 100
     longest_utterance_length = 40
-
     summary_feature_count = 10
 
     print "Hidden layer size:", hidden_units_1, "Label Size:", label_size, "Use Softmax:", use_softmax, "Use Delex Features:", use_delex_features

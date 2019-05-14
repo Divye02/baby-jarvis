@@ -1764,7 +1764,7 @@ class NeuralBeliefTracker:
         self.batch_size = int(config.get("train", "batch_size"))
         self.use_elmo = config.get("model", "use_elmo") in ["True", "true"]
         self.use_rnn = config.get("model", "use_rnn") in ["True", "true"]
-        self.train_model = config.get("train", "train_model")
+        self.train_model_name = config.get("train", "train_model")
         self.model_base_dir = config.get("model", "model_base_dir").format(self.train_model_name)
         self.eval_model = config.get("test", "eval_model")
 

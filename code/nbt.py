@@ -1433,7 +1433,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     counter=0
 
     # try restoring models
-    slot_model_path = os.path.join(model_base_dir, target_slot)
+    slot_model_path = os.path.join(model_base_dir, target_slot.replace(' ', '_'))
     model_checkpoints = [f for f in os.listdir(slot_model_path) if
                          os.path.isfile(os.path.join(slot_model_path, f)) and f.endswith('meta')]
     if len(model_checkpoints) != 0:
@@ -1788,7 +1788,7 @@ class NeuralBeliefTracker:
         slots = dialogue_ontology.keys()
 
         for slot in slots:
-            os.system("mkdir -p {}".format(os.path.join(self.model_base_dir, slot)))
+            os.system("mkdir -p {}".format(os.path.join(self.model_base_dir, slot.replace(' ', '_'))))
 
         word_vector_size = random.choice(word_vectors.values()).shape[0]
 
@@ -1960,7 +1960,7 @@ class NeuralBeliefTracker:
         current_bs = {}
 
         for slot in self.dialogue_ontology:
-            slot_model_path = os.path.join(self.model_base_dir, slot)
+            slot_model_path = os.path.join(self.model_base_dir, slot.replace(' ', '_'))
             try:
 
                 path_to_load = tf.train.latest_checkpoint(slot_model_path)
@@ -1988,6 +1988,7 @@ class NeuralBeliefTracker:
         FUTURE: Train the NBT model with new dataset.
         """
         for slot in sorted(self.dialogue_ontology.keys()):
+            if slot != 'price range': continue
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
@@ -2025,7 +2026,7 @@ class NeuralBeliefTracker:
 
 
             for load_slot in sorted(slots_to_load):
-                slot_model_path = os.path.join(self.model_base_dir, load_slot)
+                slot_model_path = os.path.join(self.model_base_dir, load_slot.replace(' ', '_'))
 
                 path_to_load = tf.train.latest_checkpoint(slot_model_path)
                 print "----------- Loading Model", path_to_load, " ----------------"

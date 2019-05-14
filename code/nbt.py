@@ -1410,13 +1410,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         print "val data is none"
         return
 
-    # will be used to save model parameters with best validation scores.
-    saver = tf.train.Saver(max_to_keep=1)
-    best_model_saver = tf.train.Saver(max_to_keep=1)
-
-    init = tf.global_variables_initializer()
     sess = tf.Session()
-
 
     best_f_score = -0.01
 
@@ -1451,6 +1445,10 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     else:
         print "Running new train for model {}".format(slot_model_path)
+
+        saver = tf.train.Saver(max_to_keep=1)
+        best_model_saver = tf.train.Saver(max_to_keep=1)
+        init = tf.global_variables_initializer()
         sess.run(init)
 
     train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)

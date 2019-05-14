@@ -1988,7 +1988,6 @@ class NeuralBeliefTracker:
         FUTURE: Train the NBT model with new dataset.
         """
         for slot in sorted(self.dialogue_ontology.keys()):
-            if slot != 'price range': continue
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \

@@ -1410,6 +1410,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         print "val data is none"
         return
 
+    init = tf.global_variables_initializer()
     sess = tf.Session()
 
     best_f_score = -0.01
@@ -1448,7 +1449,6 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
         saver = tf.train.Saver(max_to_keep=1)
         best_model_saver = tf.train.Saver(max_to_keep=1)
-        init = tf.global_variables_initializer()
         sess.run(init)
 
     train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)

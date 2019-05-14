@@ -43,13 +43,17 @@ def define_RNN_model(utterance_representations_full, hidden_units=300, vector_di
     num_layers = 1
     # hidden_representation = tf.zeros([num_filters], tf.float32)
 
-    lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_units,
+    lstm_cell_f = tf.nn.rnn_cell.LSTMCell(hidden_units,
                                         state_is_tuple=True)  # can use tf.nn.rnn_cell.GRUCell or tf.nn.rnn_cell.BasicRNNCell instead
-    cells = tf.nn.rnn_cell.MultiRNNCell([lstm_cell] * num_layers, state_is_tuple=True)
-    # init_state = cells.zero_state(batch_size, tf.float32)
-    rnn_outputs, final_state = tf.nn.dynamic_rnn(cells, utterance_representations_full, dtype=tf.float32)
+    cells_f = tf.nn.rnn_cell.MultiRNNCell([lstm_cell_f] * num_layers, state_is_tuple=True)
 
-    return final_state[0][0]
+    lstm_cell_b = tf.nn.rnn_cell.LSTMCell(hidden_units,
+                                        state_is_tuple=True)  # can use tf.nn.rnn_cell.GRUCell or tf.nn.rnn_cell.BasicRNNCell instead
+    cells_b = tf.nn.rnn_cell.MultiRNNCell([lstm_cell_b] * num_layers, state_is_tuple=True)
+
+    rnn_outputs, final_state = tf.nn.bidirectional_dynamic_rnn(cells_f, cells_b, utterance_representations_full, dtype=tf.float32)
+
+    return tf.concat([final_state[0][0][1], final_state[1][0][1]], 1)
 
 
 def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, use_elmo=True, single_turn=False, use_rnn=False, id=''):
@@ -159,6 +163,7 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     if use_rnn:
         with tf.variable_scope(id):
             h_utterance_representation = define_RNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, num_filters, vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
+        hidden_utterance_size = 600
     else:
         h_utterance_representation = define_CNN_model(
             embedding_tensor_full if use_elmo else utterance_representations_full, num_filters,
@@ -166,8 +171,8 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     # print(h_utterance_representation.shape)
     #candidate_sum = W_slots + W_values # size [label_size, vector_dimension]
 
-    w_candidates = tf.Variable(tf.random_normal([vector_dimension, vector_dimension]))
-    b_candidates = tf.Variable(tf.zeros([vector_dimension]))
+    w_candidates = tf.Variable(tf.random_normal([vector_dimension, hidden_utterance_size]))
+    b_candidates = tf.Variable(tf.zeros([hidden_utterance_size]))
     
     # multiply to get: [label_size, vector_dimension]
     candidates_transform = tf.nn.sigmoid(tf.matmul(W_values, w_candidates) + b_candidates)
@@ -182,9 +187,9 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     for value_idx in range(0, label_count):
         list_of_value_contributions.append(tf.multiply(h_utterance_representation, candidates_transform[value_idx, :]))
 
-    h_utterance_representation_candidate_interaction = tf.reshape(tf.transpose(tf.stack(list_of_value_contributions), [1, 0, 2]), [-1, vector_dimension])
+    h_utterance_representation_candidate_interaction = tf.reshape(tf.transpose(tf.stack(list_of_value_contributions), [1, 0, 2]), [-1, hidden_utterance_size])
     # the same transform now runs across each value's vector, multiplying. 
-    w_joint_hidden_layer = tf.Variable(tf.random_normal([vector_dimension, hidden_units_1]))
+    w_joint_hidden_layer = tf.Variable(tf.random_normal([hidden_utterance_size, hidden_units_1]))
     b_joint_hidden_layer = tf.Variable(tf.zeros([hidden_units_1]))
 
     # now multiply [None, label_size, vector_dimension] by [vector_dimension, hidden_units_1], to get [None, label_size, hidden_units_1]
@@ -214,7 +219,7 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
 
     decision = tf.multiply(tf.expand_dims(dot_product_sysreq, 1), h_utterance_representation) 
 
-    sysreq_w_hidden_layer = tf.Variable(tf.random_normal([vector_dimension, hidden_units_1]))
+    sysreq_w_hidden_layer = tf.Variable(tf.random_normal([hidden_utterance_size, hidden_units_1]))
     sysreq_b_hidden_layer = tf.Variable(tf.zeros([hidden_units_1]))
 
     
@@ -236,7 +241,7 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     # =================== NETWORK FOR CONFIRMATIONS ==========================
 
     # here, we do want to tie across all values, as it will get a different signal depending on whether both things match. 
-    confirm_w1_hidden_layer = tf.Variable(tf.random_normal([vector_dimension, hidden_units_1]))
+    confirm_w1_hidden_layer = tf.Variable(tf.random_normal([hidden_utterance_size, hidden_units_1]))
     confirm_b1_hidden_layer = tf.Variable(tf.zeros([hidden_units_1]))
 
     confirm_w1_softmax = tf.Variable(tf.random_normal([hidden_units_1, 1]))

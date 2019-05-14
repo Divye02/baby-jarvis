@@ -1410,6 +1410,8 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         print "val data is none"
         return
 
+    saver = tf.train.Saver(max_to_keep=1)
+    best_model_saver = tf.train.Saver(max_to_keep=1)
     init = tf.global_variables_initializer()
     sess = tf.Session()
 
@@ -1435,6 +1437,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         latest_checkpoint_file = tf.train.latest_checkpoint(slot_model_path)
         print "Loading the last checkpoint: {}".format(latest_checkpoint_file)
 
+        sess = tf.Session(graph=tf.Graph())
         saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
         saver.restore(sess, latest_checkpoint_file)
 
@@ -1446,9 +1449,6 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
     else:
         print "Running new train for model {}".format(slot_model_path)
-
-        saver = tf.train.Saver(max_to_keep=1)
-        best_model_saver = tf.train.Saver(max_to_keep=1)
         sess.run(init)
 
     train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)

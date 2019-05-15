@@ -1361,7 +1361,7 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
 
 def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name,
               dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096,
-              model_base_dir='./models/model_default', model_name='model_default', batch_size=256, single_turn=False, session=None, saver=None, best_model_saver=None):
+              model_base_dir='./models/model_default', model_name='model_default', batch_size=256, single_turn=False):
     """
     This method trains a model on the data and saves the file parameters to a file which can
     then be loaded to do evaluation.
@@ -1410,9 +1410,10 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         print "val data is none"
         return
 
-    # saver = tf.train.Saver(max_to_keep=1)
-    # best_model_saver = tf.train.Saver(max_to_keep=1)
-    sess = session
+    saver = tf.train.Saver(max_to_keep=1)
+    best_model_saver = tf.train.Saver(max_to_keep=1)
+    init = tf.global_variables_initializer()
+    sess = tf.Session()
 
     best_f_score = -0.01
 
@@ -1446,7 +1447,6 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         counter = epoch * batches_per_epoch
     else:
         print "Running new train for model {}".format(slot_model_path)
-        init = tf.global_variables_initializer()
         sess.run(init)
 
     train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)
@@ -1980,18 +1980,13 @@ class NeuralBeliefTracker:
         """
         FUTURE: Train the NBT model with new dataset.
         """
-        sessions = {}
-        saver = tf.train.Saver(max_to_keep=1)
-        best_model_saver = tf.train.Saver(max_to_keep=1)
+
         for slot in sorted(self.dialogue_ontology.keys()):
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
-
-            sessions[slot] = tf.Session()
-
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
                     word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn, session=sessions[slot], saver=saver, best_model_saver=best_model_saver)
+                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn)
             print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
 
 

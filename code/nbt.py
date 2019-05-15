@@ -1437,10 +1437,10 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         latest_checkpoint_file = tf.train.latest_checkpoint(slot_model_path)
         print "Loading the last checkpoint: {}".format(latest_checkpoint_file)
 
-        saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
+        # saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
         saver.restore(sess, latest_checkpoint_file)
 
-        best_model_saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
+        # best_model_saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
         best_model_saver.restore(sess, latest_checkpoint_file)
 
         epoch = int(latest_checkpoint_file.split('-')[-1])
@@ -1543,6 +1543,8 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             saver.save(sess, path_to_save, global_step=epoch, write_meta_graph=False)
 
     print "The best parameters achieved a validation metric of", round(best_f_score, 4)
+
+    sess.close()
 
 
 def print_slot_predictions(distribution, slot_values, target_slot, threshold=0.05):

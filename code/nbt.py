@@ -1361,7 +1361,7 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
 
 def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name,
               dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096,
-              model_base_dir='./models/model_default', model_name='model_default', batch_size=256, single_turn=False):
+              model_base_dir='./models/model_default', model_name='model_default', batch_size=256, single_turn=False, session=None, saver=None, best_model_saver=None):
     """
     This method trains a model on the data and saves the file parameters to a file which can
     then be loaded to do evaluation.
@@ -1410,10 +1410,9 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         print "val data is none"
         return
 
-    saver = tf.train.Saver(max_to_keep=1)
-    best_model_saver = tf.train.Saver(max_to_keep=1)
-    init = tf.global_variables_initializer()
-    sess = tf.Session()
+    # saver = tf.train.Saver(max_to_keep=1)
+    # best_model_saver = tf.train.Saver(max_to_keep=1)
+    sess = session
 
     best_f_score = -0.01
 
@@ -1437,7 +1436,6 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         latest_checkpoint_file = tf.train.latest_checkpoint(slot_model_path)
         print "Loading the last checkpoint: {}".format(latest_checkpoint_file)
 
-        sess = tf.Session(graph=tf.Graph())
         saver = tf.train.import_meta_graph(os.path.join(slot_model_path, model_checkpoints[0]))
         saver.restore(sess, latest_checkpoint_file)
 
@@ -1446,9 +1444,9 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
         epoch = int(latest_checkpoint_file.split('-')[-1])
         counter = epoch * batches_per_epoch
-
     else:
         print "Running new train for model {}".format(slot_model_path)
+        init = tf.global_variables_initializer()
         sess.run(init)
 
     train_writer = tf.summary.FileWriter('./logs/{}/{}/train '.format(model_name, target_slot), sess.graph)
@@ -1462,9 +1460,6 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
 
         current_epoch_fscore = 0.0
         current_epoch_acc = 0.0
-
-        # if epoch > 1 and target_slot == "request":
-        #     return
 
         total_accuracy = 0
         element_count = 0
@@ -1985,12 +1980,18 @@ class NeuralBeliefTracker:
         """
         FUTURE: Train the NBT model with new dataset.
         """
+        sessions = {}
+        saver = tf.train.Saver(max_to_keep=1)
+        best_model_saver = tf.train.Saver(max_to_keep=1)
         for slot in sorted(self.dialogue_ontology.keys()):
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
+
+            sessions[slot] = tf.Session()
+
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
                     word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn)
+                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn, sessions=sessions[slot], saver=saver, best_model_saver=best_model_saver)
             print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
 
 

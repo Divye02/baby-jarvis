@@ -1991,7 +1991,7 @@ class NeuralBeliefTracker:
 
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
                     word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn, sessions=sessions[slot], saver=saver, best_model_saver=best_model_saver)
+                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn, session=sessions[slot], saver=saver, best_model_saver=best_model_saver)
             print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
 
 

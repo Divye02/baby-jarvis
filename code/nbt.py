@@ -89,8 +89,11 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
             dialogue_ontology.keys()))
     dialogue_count = len(evaluated_dialogues)
     if "request" in dialogue_ontology:
-        req_slots = [str("req_" + x) for x in dialogue_ontology["request"]]
-        requestables = ["request"]
+        # req_slots = [str("req_" + x) for x in dialogue_ontology["request"]]
+        # requestables = ["request"]
+
+        req_slots = []
+        requestables = []
     else:
         req_slots = []
         requestables = []
@@ -1762,6 +1765,7 @@ class NeuralBeliefTracker:
         self.train_model_name = config.get("train", "train_model")
         self.model_base_dir = config.get("model", "model_base_dir").format(self.train_model_name)
         self.eval_model = config.get("test", "eval_model")
+        self.eval_model_base_dir = config.get("model", "model_base_dir").format(self.eval_model)
 
         if not os.path.isfile(word_vector_destination):
             print "Vectors not there, downloading small Paragram and putting it there."
@@ -2013,7 +2017,7 @@ class NeuralBeliefTracker:
         for model_id in range(0, self.num_models):
 
             if self.language == "english" or self.language == "en" or override_en_ontology:
-                slots_to_load = ["food", "price range", "area", "request"]
+                slots_to_load = ["food", "price range", "area"]
             elif self.language == "italian" or self.language == "it":
                 slots_to_load = ["cibo", "prezzo", "area", "request"]
             elif self.language == "german" or self.language == "de":
@@ -2021,7 +2025,7 @@ class NeuralBeliefTracker:
 
 
             for load_slot in sorted(slots_to_load):
-                slot_model_path = os.path.join(self.model_base_dir, load_slot.replace(' ', '_'))
+                slot_model_path = os.path.join(self.eval_model_base_dir, load_slot.replace(' ', '_'))
 
                 path_to_load = tf.train.latest_checkpoint(slot_model_path)
                 print "----------- Loading Model", path_to_load, " ----------------"

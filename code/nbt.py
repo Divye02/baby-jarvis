@@ -83,7 +83,7 @@ def compare_request_lists(list_a, list_b):
 
     return True
 
-def plot_confusion_matrix(y_true, y_pred, classes=None, slot_type
+def plot_confusion_matrix(y_true, y_pred, classes=None, slot_type,
                           normalize=False,
                           title=None,
                           cmap=plt.cm.Blues):

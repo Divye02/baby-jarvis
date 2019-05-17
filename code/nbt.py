@@ -16,6 +16,9 @@ import types
 import codecs
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import numpy as np
 

@@ -310,7 +310,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
 
     slot_gj = {}
 
-    print(all_inc_d)
+    # print(all_inc_d)
 
     total_true_positives = 0
     total_false_negatives = 0
@@ -1051,7 +1051,7 @@ def evaluate_model(valid_writer, dataset_name, sess, model_variables, data, targ
     f_score, precision, recall, num_true_positives, \
     num_positives, classified_positives, y, predictions, true_predictions, \
     correct_prediction, true_positives, train_step, update_coefficient, \
-    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
+    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, alpha = model_variables
 
     (xs_full, xs_sys_req, xs_conf_slots, xs_conf_values, xs_delex, xs_labels, xs_prev_labels,
      us_full, us_sys_req, us_sys_conf_slots, us_sys_conf_values) = data
@@ -1376,7 +1376,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
     f_score, precision, recall, num_true_positives, \
     num_positives, classified_positives, y, predictions, true_predictions, \
     correct_prediction, true_positives, train_step, update_coefficient, \
-    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
+    u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, alpha = model_variables
 
     slots = dialogue_ontology.keys()
 
@@ -1478,7 +1478,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
              batch_delex, batch_ys, batch_ys_prev, batch_u_full, batch_u_sys_req, batch_u_sys_conf_slots,
              batch_u_sys_conf_values) = batch_data
 
-            [summary, _, cf, cp, cr, ca] = sess.run([merged, train_step, f_score, precision, recall, accuracy],
+            [alpha_val, summary, _, cf, cp, cr, ca] = sess.run([alpha, merged, train_step, f_score, precision, recall, accuracy],
                                                     feed_dict={x_full: batch_xs_full, \
                                                                x_delex: batch_delex, \
                                                                requested_slots: batch_sys_req, \
@@ -1503,7 +1503,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         epoch += 1
 
         # ================================ VALIDATION ==============================================
-        print "Epoch", epoch, " Train accuracy: ", train_accuracy
+        print "Epoch", epoch, " Train accuracy: ", train_accuracy, " with alpha: ", alpha_val
 
         epoch_print_step = 1
         if epoch % 5 == 0 or epoch == 1:
@@ -1679,7 +1679,7 @@ def test_utterance(sess, utterances, word_vectors, dialogue_ontology, model_vari
     requested_slots, system_act_confirm_slots, system_act_confirm_values, y_, y_past_state, accuracy, \
     f_score, precision, recall, num_true_positives, \
     num_positives, classified_positives, y, predictions, true_predictions, correct_prediction, \
-    true_positives, train_step, update_coefficient, u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values = model_variables
+    true_positives, train_step, update_coefficient, u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, alpha = model_variables
 
     distribution, update_coefficient_load = sess.run([y, update_coefficient],
                                                      feed_dict={x_full: fv_full, x_delex: delexicalised_features, \
@@ -1987,7 +1987,7 @@ class NeuralBeliefTracker:
         FUTURE: Train the NBT model with new dataset.
         """
 
-        for slot in sorted(self.dialogue_ontology.keys()):
+        for slot in ['food', 'area', 'price range']:
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \

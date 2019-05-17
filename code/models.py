@@ -1,4 +1,5 @@
 import numpy
+import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 
@@ -53,7 +54,7 @@ def define_RNN_model(utterance_representations_full, hidden_units=300, vector_di
 
     rnn_outputs, final_state = tf.nn.bidirectional_dynamic_rnn(cells_f, cells_b, utterance_representations_full, dtype=tf.float32)
 
-    return tf.concat([final_state[0][0][1], final_state[1][0][1]], 1)
+    return tf.concat([final_state[0][0][1], final_state[1][0][1]], 1), tf.concat([rnn_outputs[0], rnn_outputs[0]], 2)
 
 
 def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, use_elmo=True, single_turn=False, use_rnn=False, id=''):
@@ -162,7 +163,7 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     # filter just dot products - in images these then overlap from different regions - we don't have that.
     if use_rnn:
         with tf.variable_scope(id):
-            h_utterance_representation = define_RNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, num_filters, vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
+            h_utterance_representation, rnn_outputs = define_RNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, num_filters, vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
         hidden_utterance_size = 600
     else:
         h_utterance_representation = define_CNN_model(
@@ -181,13 +182,26 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     # or utterance [None, vector_dimension] X [vector_dimension, label_size] to get [None, label_size]
     #h_utterance_representation_candidate_interaction = tf.Variable(tf.zeros([None, label_size, vector_dimension]))
 
+
     list_of_value_contributions = []
+
+    # w_attention = tf.Variable(tf.random_normal([hidden_utterance_size, hidden_utterance_size]))
+    # candidates_transform_attn = tf.matmul(w_attention, tf.transpose(candidates_transform))
+    score_attn = tf.matmul(tf.reshape(rnn_outputs, [-1, hidden_utterance_size]), tf.transpose(candidates_transform))
+    score_attn = tf.reshape(score_attn, [-1, 40, label_size])
+    h_utterance_representation_candidate_interaction = tf.matmul(tf.transpose(rnn_outputs, [0, 2, 1]), score_attn)
+    h_utterance_representation_candidate_interaction = h_utterance_representation_candidate_interaction / tf.constant(np.sqrt(hidden_utterance_size), dtype=tf.float32)
+
+    h_utterance_representation_candidate_interaction = tf.transpose(h_utterance_representation_candidate_interaction, [0, 2, 1])
+    h_utterance_representation_candidate_interaction = h_utterance_representation_candidate_interaction[:, :label_count, :]
+    h_utterance_representation_candidate_interaction = tf.reshape(h_utterance_representation_candidate_interaction, [-1, hidden_utterance_size])
 
     # get interaction of utterance with each value:
     for value_idx in range(0, label_count):
         list_of_value_contributions.append(tf.multiply(h_utterance_representation, candidates_transform[value_idx, :]))
-
-    h_utterance_representation_candidate_interaction = tf.reshape(tf.transpose(tf.stack(list_of_value_contributions), [1, 0, 2]), [-1, hidden_utterance_size])
+    #
+    alpha = tf.Variable(0.5)
+    h_utterance_representation_candidate_interaction = (1 - alpha) * tf.reshape(tf.transpose(tf.stack(list_of_value_contributions), [1, 0, 2]), [-1, hidden_utterance_size]) + alpha * h_utterance_representation_candidate_interaction
     # the same transform now runs across each value's vector, multiplying. 
     w_joint_hidden_layer = tf.Variable(tf.random_normal([hidden_utterance_size, hidden_units_1]))
     b_joint_hidden_layer = tf.Variable(tf.zeros([hidden_units_1]))
@@ -418,4 +432,4 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
             y_, y_past_state, accuracy, f_score, precision, \
            recall, num_true_positives, num_positives, classified_positives, y, \
            predictions, true_predictions, correct_prediction, true_positives, train_step, update_coefficient, \
-           u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values
+           u_full, u_requested_slots, u_system_act_confirm_slots, u_system_act_confirm_values, alpha

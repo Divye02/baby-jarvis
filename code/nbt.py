@@ -393,7 +393,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, normalize=False,
                            title= slot_type + ' confusion matrix')
 
-    plt.savefig("temp2.png")
+        plt.savefig(slot_type + ".png")
 
     total_true_positives = 0
     total_false_negatives = 0

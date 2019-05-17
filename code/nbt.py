@@ -83,7 +83,7 @@ def compare_request_lists(list_a, list_b):
 
     return True
 
-def plot_confusion_matrix(y_true, y_pred, classes=None,
+def plot_confusion_matrix(y_true, y_pred, classes=None, slot_type
                           normalize=False,
                           title=None,
                           cmap=plt.cm.Blues):
@@ -107,8 +107,10 @@ def plot_confusion_matrix(y_true, y_pred, classes=None,
         print('Confusion matrix, without normalization')
 
     print(cm)
-
-    fig, ax = plt.subplots(figsize=(40,40))
+    if slot_type == "food":
+        fig, ax = plt.subplots(figsize=(40,40))
+    else:
+        fig, ax = plt.subplots()
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
     # We want to show all ticks...
@@ -393,7 +395,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, normalize=False,
                            title= slot_type + ' confusion matrix')
 
-        plt.savefig(slot_type + "4.png")
+        plt.savefig(slot_type + "5.png")
 
     total_true_positives = 0
     total_false_negatives = 0

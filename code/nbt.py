@@ -389,11 +389,14 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         true_labels = confusion_labels[slot_type]["true"]
         predicted_labels = confusion_labels[slot_type]["predicted"]
         slot_labels = unique_labels(true_labels, predicted_labels)
-
+        if slot_type == "food":
+            plt.figure(figsize=(12,12))
+        else:
+            plt.figure(figsize=(4,4))
         plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, normalize=False,
                            title= slot_type + ' confusion matrix')
 
-        plt.savefig(slot_type + ".png")
+        plt.savefig(slot_type + "2.png")
 
     total_true_positives = 0
     total_false_negatives = 0

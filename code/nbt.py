@@ -1525,7 +1525,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
             time.time() - stime, 2), "last update at:", last_update, "/", max_epoch
 
         # and if we got a new high score for validation f-score, we need to save the parameters:
-        if current_metric > best_f_score:
+        if current_metric >= best_f_score:
 
             last_update = epoch
 

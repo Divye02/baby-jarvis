@@ -79,7 +79,7 @@ def compare_request_lists(list_a, list_b):
 
     return True
 
-def plot_confusion_matrix(y_true, y_pred, classes,
+def plot_confusion_matrix(y_true, y_pred, classes=None,
                           normalize=False,
                           title=None,
                           cmap=plt.cm.Blues):
@@ -95,9 +95,6 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
-    # Only use the labels that appear in the data
-    if classes == None:
-        classes = unique_labels(y_true, y_pred)
 
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]

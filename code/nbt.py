@@ -83,7 +83,7 @@ def compare_request_lists(list_a, list_b):
 
     return True
 
-def plot_confusion_matrix(y_true, y_pred, classes=None, slot_type,
+def plot_confusion_matrix(y_true, y_pred, slot_type, classes=None,
                           normalize=False,
                           title=None,
                           cmap=plt.cm.Blues):
@@ -392,7 +392,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         predicted_labels = confusion_labels[slot_type]["predicted"]
         slot_labels = unique_labels(true_labels, predicted_labels)
 
-        plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, slot_type, normalize=False,
+        plot_confusion_matrix(true_labels, predicted_labels, slot_type, classes=slot_labels, normalize=False,
                            title= slot_type + ' confusion matrix')
 
         plt.savefig(slot_type + "5.png")

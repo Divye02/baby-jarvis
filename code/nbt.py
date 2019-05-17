@@ -96,7 +96,9 @@ def plot_confusion_matrix(y_true, y_pred, classes,
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
-    classes = classes[unique_labels(y_true, y_pred)]
+    if classes == None:
+        classes = unique_labels(y_true, y_pred)
+
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")
@@ -381,7 +383,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
     print(area_true_labels)
     print(area_predicted_labels)
 
-    area_names = ["centre", "north", "west", "south", "east", "dontcare", "none"]
+    area_names = unique_labels(area_true_labels, area_predicted_labels)
     # Plot normalized confusion matrix
     plot_confusion_matrix(area_true_labels, area_predicted_labels, classes=area_names, normalize=True,
                           title='Normalized confusion matrix')

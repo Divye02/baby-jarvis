@@ -129,6 +129,11 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         "fp": [],
         "fn": []
     }
+
+    # for building a confusion matrix
+    area_true_labels = []
+    area_predicted_labels = []
+
     for slot in informable_slots:
         slot_correct_turns[slot] = 0.0
         slot_incorrect_turns[slot] = 0.0
@@ -219,6 +224,11 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
                 try:
                     true_value = turn[1]["True State"][slot]
                     predicted_value = turn[2]["Prediction"][slot]
+
+                    if slot == "area":
+                        area_true_labels.append(true_value)
+                        area_predicted_labels.append(predicted_value)
+
                 except:
 
                     print "PROBLEM WITH", turn, "slot:", slot, "inf slots", informable_slots
@@ -311,6 +321,10 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
     slot_gj = {}
 
     print(all_inc_d)
+
+    print(area_true_labels)
+    print(area_predicted_labels)
+    
 
     total_true_positives = 0
     total_false_negatives = 0
@@ -2025,6 +2039,10 @@ class NeuralBeliefTracker:
 
 
             for load_slot in sorted(slots_to_load):
+
+                if load_slot == "request":
+                    continue
+
                 slot_model_path = os.path.join(self.eval_model_base_dir, load_slot.replace(' ', '_'))
 
                 path_to_load = tf.train.latest_checkpoint(slot_model_path)

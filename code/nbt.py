@@ -108,7 +108,7 @@ def plot_confusion_matrix(y_true, y_pred, classes=None,
 
     print(cm)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(40,40))
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
     # We want to show all ticks...
@@ -389,14 +389,11 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         true_labels = confusion_labels[slot_type]["true"]
         predicted_labels = confusion_labels[slot_type]["predicted"]
         slot_labels = unique_labels(true_labels, predicted_labels)
-        if slot_type == "food":
-            plt.figure(figsize=(20,10))
-        else:
-            plt.figure(figsize=(4,4))
+
         plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, normalize=False,
                            title= slot_type + ' confusion matrix')
 
-        plt.savefig(slot_type + "3.png")
+        plt.savefig(slot_type + "4.png")
 
     total_true_positives = 0
     total_false_negatives = 0

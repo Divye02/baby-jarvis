@@ -15,6 +15,7 @@ import ConfigParser
 import types
 import codecs
 from sklearn.metrics import confusion_matrix
+from sklearn.utils.multiclass import unique_labels
 import matplotlib.pyplot as plt
 
 from tensorflow.python import debug as tf_debug

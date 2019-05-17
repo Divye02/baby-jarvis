@@ -392,7 +392,7 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
         predicted_labels = confusion_labels[slot_type]["predicted"]
         slot_labels = unique_labels(true_labels, predicted_labels)
 
-        plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, normalize=False,
+        plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, slot_type, normalize=False,
                            title= slot_type + ' confusion matrix')
 
         plt.savefig(slot_type + "5.png")

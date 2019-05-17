@@ -190,6 +190,8 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
     }
 
     # for building a confusion matrix
+    confusion_labels = {}
+
     area_true_labels = []
     area_predicted_labels = []
 
@@ -284,9 +286,11 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
                     true_value = turn[1]["True State"][slot]
                     predicted_value = turn[2]["Prediction"][slot]
 
-                    if slot == "area":
-                        area_true_labels.append(true_value)
-                        area_predicted_labels.append(predicted_value)
+                    if slot not in confusion_labels:
+                        confusion_labels[slot] = {"true": [], "predicted": []}
+                    
+                    confusion_labels[slot]["true"].append(true_value)
+                    confusion_labels[slot]["predicted"].append(predicted_value)
 
                 except:
 
@@ -381,15 +385,15 @@ def evaluate_woz(evaluated_dialogues, dialogue_ontology):
 
     print(all_inc_d)
 
-    print(area_true_labels)
-    print(area_predicted_labels)
+    for slot_type in confusion_labels:
+        true_labels = confusion_labels[slot_type]["true"]
+        predicted_labels = confusion_labels[slot_type]["predicted"]
+        slot_labels = unique_labels(true_labels, predicted_labels)
 
-    area_names = unique_labels(area_true_labels, area_predicted_labels)
-    # Plot normalized confusion matrix
-    plot_confusion_matrix(area_true_labels, area_predicted_labels, classes=area_names, normalize=True,
-                          title='Normalized confusion matrix')
+        plot_confusion_matrix(true_labels, predicted_labels, classes=slot_labels, normalize=False,
+                           title= slot_type + ' confusion matrix')
 
-    plt.savefig("temp.png")
+    plt.savefig("temp2.png")
 
     total_true_positives = 0
     total_false_negatives = 0

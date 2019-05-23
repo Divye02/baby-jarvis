@@ -1364,7 +1364,7 @@ def extract_feature_vectors(utterances, word_vectors, ngram_size=3, longest_utte
 
 def train_run(target_language, override_en_ontology, percentage, model_type, dataset_name, word_vectors, exp_name,
               dialogue_ontology, model_variables, target_slot, language="en", max_epoch=20, batches_per_epoch=4096,
-              model_base_dir='./models/model_default', model_name='model_default', batch_size=256, single_turn=False):
+              model_base_dir='./models/model_default', model_name='model_default', batch_size=256, single_turn=False, use_scaled_contrib=False):
     """
     This method trains a model on the data and saves the file parameters to a file which can
     then be loaded to do evaluation.
@@ -1503,7 +1503,7 @@ def train_run(target_language, override_en_ontology, percentage, model_type, dat
         epoch += 1
 
         # ================================ VALIDATION ==============================================
-        print "Epoch", epoch, " Train accuracy: ", train_accuracy, " with alpha: ", alpha_val
+        print "Epoch: {} Train accuracy: {} Alpha {}".format(epoch, train_accuracy, alpha_val if use_scaled_contrib else "None")
 
         epoch_print_step = 1
         if epoch % 5 == 0 or epoch == 1:
@@ -1762,6 +1762,7 @@ class NeuralBeliefTracker:
         self.batch_size = int(config.get("train", "batch_size"))
         self.use_elmo = config.get("model", "use_elmo") in ["True", "true"]
         self.use_rnn = config.get("model", "use_rnn") in ["True", "true"]
+        self.use_scaled_contrib = config.get("model", "use_scaled_contrib") in ["True", "true"]
         self.train_model_name = config.get("train", "train_model")
         self.model_base_dir = config.get("model", "model_base_dir").format(self.train_model_name)
         self.eval_model = config.get("test", "eval_model")
@@ -1905,7 +1906,7 @@ class NeuralBeliefTracker:
                                                               value_specific_decoder=self.value_specific_decoder,
                                                               learn_belief_state_update=self.learn_belief_state_update,
                                                               use_elmo=self.use_elmo, single_turn=self.single_turn,
-                                                              use_rnn=self.use_rnn, id='_'.join(slot.split()))
+                                                              use_rnn=self.use_rnn, id='_'.join(slot.split()), use_scaled_contrib=self.use_scaled_contrib)
             else:
 
                 slot_vectors = numpy.zeros((len(dialogue_ontology[slot]) + 1, 300), dtype="float32")  # +1 for None
@@ -1922,7 +1923,7 @@ class NeuralBeliefTracker:
                                                               value_specific_decoder=self.value_specific_decoder,
                                                               learn_belief_state_update=self.learn_belief_state_update,
                                                               use_elmo=self.use_elmo, single_turn=self.single_turn,
-                                                              use_rnn=self.use_rnn, id='_'.join(slot.split()))
+                                                              use_rnn=self.use_rnn, id='_'.join(slot.split()), use_scaled_contrib=self.use_scaled_contrib)
 
         self.dialogue_ontology = dialogue_ontology
 
@@ -1987,12 +1988,12 @@ class NeuralBeliefTracker:
         FUTURE: Train the NBT model with new dataset.
         """
 
-        for slot in ['food', 'area', 'price range']:
+        for slot in ['price range', 'area', 'food']:
             print "\n==============  Training the NBT Model for slot", slot, "===============\n"
             stime = time.time()
             train_run(target_language=self.language, override_en_ontology=False, percentage=1.0, model_type="CNN", dataset_name=self.dataset_name, \
                     word_vectors=self.word_vectors, exp_name=self.exp_name, dialogue_ontology=self.dialogue_ontology, model_variables=self.model_variables[slot], target_slot=slot, language=self.language_suffix, \
-                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, single_turn=self.single_turn)
+                    max_epoch=self.max_epoch, batches_per_epoch=self.batches_per_epoch, model_base_dir=self.model_base_dir, model_name=self.train_model_name, batch_size=self.batch_size, use_scaled_contrib=self.use_scaled_contrib)
             print "\n============== Training this model took", round(time.time()-stime, 1), "seconds. ==================="
 
 

@@ -2,6 +2,7 @@ import numpy
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
+import os
 
 
 def define_CNN_model(utterance_representations_full, num_filters=300, vector_dimension=300, longest_utterance_length=40):
@@ -37,7 +38,7 @@ def define_CNN_model(utterance_representations_full, num_filters=300, vector_dim
 
     return hidden_representation
 
-def define_RNN_model(utterance_representations_full, hidden_units=300, vector_dimension=300, longest_utterance_length=40):
+def define_RNN_model(utterance_representations_full, hidden_units=300):
     """
     Better code for defining the RNN model.
     """
@@ -57,7 +58,7 @@ def define_RNN_model(utterance_representations_full, hidden_units=300, vector_di
     return tf.concat([final_state[0][0][1], final_state[1][0][1]], 1), tf.concat([rnn_outputs[0], rnn_outputs[0]], 2)
 
 
-def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, use_elmo=True, single_turn=False, use_rnn=False, id=''):
+def model_definition(vector_dimension, label_count, slot_vectors, value_vectors, use_delex_features=False, use_softmax=True, value_specific_decoder=False, learn_belief_state_update=True, use_elmo=True, single_turn=False, use_rnn=False, id='', use_scaled_contrib=False):
     """
     This method defines the model and returns the required TensorFlow operations.
 
@@ -146,24 +147,16 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
 
     embedding_tensor_full = tf.placeholder(dtype=tf.float32, shape=[None, 40, vector_dimension + 1024])
     if use_elmo:
-        elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=True)
+        os.environ['TFHUB_CACHE_DIR'] = '/projects/instr/19sp/cse481n/Baby_Jarvis/tf_cache_elmo_pure'
+        elmo = hub.Module("https://tfhub.dev/google/elmo/2", trainable=False)
         elmo_emb = elmo(u_full, as_dict=True)['elmo'][1:]
-        embedding_tensor_full = tf.concat([utterance_representations_full, elmo_emb], axis=2)
-
-    # embedding_tensor_requested_slots = tf.zeros([None, 10, 1024])
-    # embedding_tensor_system_act_confirm_slots = tf.zeros([None, 10, 1024])
-    # embedding_tensor_system_act_confirm_values = tf.zeros([None, 10, 1024])
-
-    # embedding_tensor_full[:, 0:tf.shape(temp)[2], :] = temp
-    # embedding_tensor_requested_slots = elmo(u_requested_slots, as_dict=True)['elmo']
-    # embedding_tensor_system_act_confirm_slots = elmo(u_system_act_confirm_slots, as_dict=True)['elmo']
-    # embedding_tensor_system_act_confirm_values = elmo(u_system_act_confirm_values, as_dict=True)['elmo']
+        embedding_tensor_full = elmo_emb #tf.concat([utterance_representations_full, elmo_emb], axis=2)
 
     # filter needs to be of shape: filter_height = 1,2,3, filter_width=300, in_channel=1, out_channel=num_filters
     # filter just dot products - in images these then overlap from different regions - we don't have that.
     if use_rnn:
         with tf.variable_scope(id):
-            h_utterance_representation, rnn_outputs = define_RNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, num_filters, vector_dimension + 1024 if use_elmo else vector_dimension, longest_utterance_length)
+            h_utterance_representation, rnn_outputs = define_RNN_model(embedding_tensor_full if use_elmo else utterance_representations_full, hidden_units=300)
         hidden_utterance_size = 600
     else:
         h_utterance_representation = define_CNN_model(
@@ -196,12 +189,14 @@ def model_definition(vector_dimension, label_count, slot_vectors, value_vectors,
     h_utterance_representation_candidate_interaction = h_utterance_representation_candidate_interaction[:, :label_count, :]
     h_utterance_representation_candidate_interaction = tf.reshape(h_utterance_representation_candidate_interaction, [-1, hidden_utterance_size])
 
-    # get interaction of utterance with each value:
-    for value_idx in range(0, label_count):
-        list_of_value_contributions.append(tf.multiply(h_utterance_representation, candidates_transform[value_idx, :]))
-    #
     alpha = tf.Variable(0.5)
-    h_utterance_representation_candidate_interaction = (1 - alpha) * tf.reshape(tf.transpose(tf.stack(list_of_value_contributions), [1, 0, 2]), [-1, hidden_utterance_size]) + alpha * h_utterance_representation_candidate_interaction
+
+    if use_scaled_contrib:
+        # get interaction of utterance with each value:
+        for value_idx in range(0, label_count):
+            list_of_value_contributions.append(tf.multiply(h_utterance_representation, candidates_transform[value_idx, :]))
+        h_utterance_representation_candidate_interaction = (1 - alpha) * tf.reshape(tf.transpose(tf.stack(list_of_value_contributions), [1, 0, 2]), [-1, hidden_utterance_size]) + alpha * h_utterance_representation_candidate_interaction
+
     # the same transform now runs across each value's vector, multiplying. 
     w_joint_hidden_layer = tf.Variable(tf.random_normal([hidden_utterance_size, hidden_units_1]))
     b_joint_hidden_layer = tf.Variable(tf.zeros([hidden_units_1]))

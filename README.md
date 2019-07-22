@@ -8,8 +8,10 @@ Task-oriented dialogue systems have seen a recent boom, especially due to the ad
 ## Running things
 This repo provides "train.sh", "track.sh", "test.sh". TO train, test or test a model as well as to run a live interrface with a back and forth with the model.
 The files in "config/" define all the hyper parameters for training and testing the model.
+
 Below is an example of a trained model doing the "state tracking"
-![Architecture](images/example.png)
+![Example](images/example.png)
+
 ## Other resources
 https://divye02.github.io/baby-jarvis
 
